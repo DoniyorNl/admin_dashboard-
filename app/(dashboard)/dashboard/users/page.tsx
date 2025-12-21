@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import {
 	Search,
 	Filter,
@@ -10,12 +10,14 @@ import {
 	Mail,
 	Phone,
 	MapPin,
-	Loader2,
 	RefreshCw,
 	ChevronLeft,
 	ChevronRight,
 	AlertCircle,
 } from 'lucide-react'
+import Button from '@/components/Button'
+import Skeleton from 'react-loading-skeleton'
+import 'react-loading-skeleton/dist/skeleton.css'
 
 interface User {
 	id: number
@@ -37,19 +39,24 @@ export default function UsersPage() {
 	const [loading, setLoading] = useState(false)
 	const [error, setError] = useState<string | null>(null)
 	const [searchQuery, setSearchQuery] = useState('')
-	const [totalPages] = useState(3) // JSONPlaceholder has ~10 users, 3 per page = ~3 pages
+	const [totalPages] = useState(2)
+
 	const fetchUsers = async () => {
 		setLoading(true)
 		setError(null)
 		try {
-			const res = await fetch(`https://jsonplaceholder.typicode.com/users?_limit=3&_page=${page}`)
+			const res = await fetch(`https://jsonplaceholder.typicode.com/users?_limit=5&_page=${page}`)
 			if (!res.ok) throw new Error('Failed to fetch users')
 			const data: User[] = await res.json()
-			setUsers(data)
+
+			// Smooth transition
+			setTimeout(() => {
+				setUsers(data)
+				setLoading(false)
+			}, 5000)
 		} catch (err) {
 			setError('Failed to load users. Please try again.')
 			console.error(err)
-		} finally {
 			setLoading(false)
 		}
 	}
@@ -85,81 +92,76 @@ export default function UsersPage() {
 	}
 
 	return (
-		<div className='space-y-6'>
+		<div className='space-y-4'>
 			{/* Header Section */}
-			<div className='flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4'>
+			<div className='flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2'>
 				<div>
 					<h1 className='text-2xl font-bold text-slate-800 dark:text-slate-100'>Users</h1>
-					<p className='text-sm text-slate-600 dark:text-slate-400 mt-1'>
+					<p className='text-sm text-slate-600 dark:text-slate-400'>
 						Manage your user database and view user details
 					</p>
 				</div>
 
 				<div className='flex items-center gap-2'>
-					<button
-						onClick={fetchUsers}
-						disabled={loading}
-						className='p-2 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors disabled:opacity-50'
-					>
-						<RefreshCw
-							className={`w-5 h-5 text-slate-600 dark:text-slate-400 ${
-								loading ? 'animate-spin' : ''
-							}`}
-						/>
-					</button>
-					<button className='flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg hover:from-blue-700 hover:to-indigo-700 transition-all shadow-lg shadow-blue-500/30 font-medium'>
+					<Button variant='outline' size='icon' onClick={fetchUsers} disabled={loading}>
+						<RefreshCw className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} />
+					</Button>
+					<Button>
 						<UserPlus className='w-4 h-4' />
 						<span className='hidden sm:inline'>Add User</span>
-					</button>
+					</Button>
 				</div>
 			</div>
 
 			{/* Stats Cards */}
-			<div className='grid grid-cols-1 sm:grid-cols-3 gap-4'>
-				<div className='bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-6'>
+			<div className='grid grid-cols-1 sm:grid-cols-3 gap-3'>
+				{/* Total Users */}
+				<div className='bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg px-3 py-2'>
 					<div className='flex items-center justify-between'>
-						<div>
-							<p className='text-sm text-slate-600 dark:text-slate-400'>Total Users</p>
-							<p className='text-2xl font-bold text-slate-800 dark:text-slate-100 mt-1'>10</p>
+						<div className='leading-tight'>
+							<p className='text-xs text-slate-500 dark:text-slate-400'>Total Users</p>
+							<p className='text-lg font-semibold text-slate-800 dark:text-slate-100'>10</p>
 						</div>
-						<div className='w-12 h-12 rounded-lg bg-blue-100 dark:bg-blue-900/20 flex items-center justify-center'>
-							<UserPlus className='w-6 h-6 text-blue-600 dark:text-blue-400' />
+						<div className='w-8 h-8 rounded-md bg-blue-100 dark:bg-blue-900/20 flex items-center justify-center'>
+							<UserPlus className='w-4 h-4 text-blue-600 dark:text-blue-400' />
 						</div>
 					</div>
 				</div>
 
-				<div className='bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-6'>
+				{/* Active Now */}
+				<div className='bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg px-3 py-2'>
 					<div className='flex items-center justify-between'>
-						<div>
-							<p className='text-sm text-slate-600 dark:text-slate-400'>Active Now</p>
-							<p className='text-2xl font-bold text-slate-800 dark:text-slate-100 mt-1'>
+						<div className='leading-tight'>
+							<p className='text-xs text-slate-500 dark:text-slate-400'>Active Now</p>
+							<p className='text-lg font-semibold text-slate-800 dark:text-slate-100'>
 								{filteredUsers.length}
 							</p>
 						</div>
-						<div className='w-12 h-12 rounded-lg bg-green-100 dark:bg-green-900/20 flex items-center justify-center'>
-							<div className='w-3 h-3 bg-green-500 rounded-full animate-pulse' />
+						<div className='w-8 h-8 rounded-md bg-green-100 dark:bg-green-900/20 flex items-center justify-center'>
+							<span className='w-2 h-2 bg-green-500 rounded-full animate-pulse' />
 						</div>
 					</div>
 				</div>
 
-				<div className='bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-6'>
+				{/* Current Page */}
+				<div className='bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg px-3 py-2'>
 					<div className='flex items-center justify-between'>
-						<div>
-							<p className='text-sm text-slate-600 dark:text-slate-400'>Current Page</p>
-							<p className='text-2xl font-bold text-slate-800 dark:text-slate-100 mt-1'>
+						<div className='leading-tight'>
+							<p className='text-xs text-slate-500 dark:text-slate-400'>Page</p>
+							<p className='text-lg font-semibold text-slate-800 dark:text-slate-100'>
 								{page}/{totalPages}
 							</p>
 						</div>
-						<div className='w-12 h-12 rounded-lg bg-purple-100 dark:bg-purple-900/20 flex items-center justify-center'>
-							<Filter className='w-6 h-6 text-purple-600 dark:text-purple-400' />
+						<div className='w-8 h-8 rounded-md bg-purple-100 dark:bg-purple-900/20 flex items-center justify-center'>
+							<Filter className='w-4 h-4 text-purple-600 dark:text-purple-400' />
 						</div>
 					</div>
 				</div>
 			</div>
 
 			{/* Search and Filter Bar */}
-			<div className=' bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-4'>
-				<div className='flex flex-col sm:flex-row gap-4'>
+			<div className='bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-3'>
+				<div className='flex flex-col sm:flex-row gap-3'>
 					<div className='flex-1 relative'>
 						<Search className='absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400' />
 						<input
@@ -171,14 +173,12 @@ export default function UsersPage() {
 						/>
 					</div>
 					<div className='flex gap-2'>
-						<button className='flex items-center gap-2 px-4 py-2 border border-slate-200 dark:border-slate-700 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors text-slate-700 dark:text-slate-200'>
-							<Filter className='w-4 h-4' />
-							<span>Filter</span>
-						</button>
-						<button className='flex items-center gap-2 px-4 py-2 border border-slate-200 dark:border-slate-700 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors text-slate-700 dark:text-slate-200'>
-							<Download className='w-4 h-4' />
+						<Button variant='outline' icon={<Filter className='w-4 h-4' />}>
+							Filter
+						</Button>
+						<Button variant='outline' icon={<Download className='w-4 h-4' />}>
 							<span className='hidden sm:inline'>Export</span>
-						</button>
+						</Button>
 					</div>
 				</div>
 			</div>
@@ -186,121 +186,153 @@ export default function UsersPage() {
 			{/* Users Table */}
 			<div className='bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800'>
 				{error ? (
-					<div className='flex flex-col items-center justify-center py-16 px-4'>
-						<div className='w-16 h-16 rounded-full bg-red-100 dark:bg-red-900/20 flex items-center justify-center mb-4'>
-							<AlertCircle className='w-8 h-8 text-red-600 dark:text-red-400' />
+					<div className='flex flex-col items-center justify-center py-12 px-4'>
+						<div className='w-14 h-14 rounded-full bg-red-100 dark:bg-red-900/20 flex items-center justify-center mb-3'>
+							<AlertCircle className='w-7 h-7 text-red-600 dark:text-red-400' />
 						</div>
-						<p className='text-red-600 dark:text-red-400 font-medium mb-2'>Error Loading Users</p>
-						<p className='text-sm text-slate-600 dark:text-slate-400 mb-4'>{error}</p>
-						<button
-							onClick={fetchUsers}
-							className='flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors'
-						>
-							<RefreshCw className='w-4 h-4' />
+						<p className='text-red-600 dark:text-red-400 font-medium mb-1'>Error Loading Users</p>
+						<p className='text-sm text-slate-600 dark:text-slate-400 mb-3'>{error}</p>
+						<Button onClick={fetchUsers} variant='danger' icon={<RefreshCw className='w-4 h-4' />}>
 							Try Again
-						</button>
-					</div>
-				) : loading ? (
-					<div className='flex flex-col items-center justify-center py-16'>
-						<Loader2 className='w-12 h-12 text-blue-600 dark:text-blue-400 animate-spin mb-4' />
-						<p className='text-slate-600 dark:text-slate-400'>Loading users...</p>
-					</div>
-				) : filteredUsers.length === 0 ? (
-					<div className='flex flex-col items-center justify-center py-16 px-4'>
-						<div className='w-16 h-16 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center mb-4'>
-							<Search className='w-8 h-8 text-slate-400' />
-						</div>
-						<p className='text-slate-600 dark:text-slate-400 font-medium mb-2'>No users found</p>
-						<p className='text-sm text-slate-500 dark:text-slate-500'>Try adjusting your search</p>
+						</Button>
 					</div>
 				) : (
-					<div className='overflow-x-auto min-h-[300px]'>
-						<table className='w-full '>
+					<div className='overflow-x-auto'>
+						<table className='w-full'>
 							<thead className='bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-800'>
 								<tr>
-									<th className='px-6 py-4 text-left text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider'>
+									<th className='px-3 py-2.5 text-left text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider'>
 										User
 									</th>
-									<th className='px-6 py-4 text-left text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider'>
+									<th className='px-3 py-2.5 text-left text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider'>
 										Email
 									</th>
-									<th className='px-6 py-4 text-left text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider'>
+									<th className='px-3 py-2.5 text-left text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider'>
 										Phone
 									</th>
-									<th className='px-6 py-4 text-left text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider'>
+									<th className='px-3 py-2.5 text-left text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider'>
 										Location
 									</th>
-									<th className='px-6 py-4 text-left text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider'>
+									<th className='px-3 py-2.5 text-left text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider'>
 										Company
 									</th>
-									<th className='px-6 py-4 text-right text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider'>
+									<th className='px-3 py-2.5 text-right text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider'>
 										Actions
 									</th>
 								</tr>
 							</thead>
 							<tbody className='divide-y divide-slate-200 dark:divide-slate-800'>
-								{filteredUsers.map(user => (
-									<tr
-										key={user.id}
-										className='hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors'
-									>
-										<td className='px-6 py-4 whitespace-nowrap'>
-											<div className='flex items-center gap-3'>
-												<div
-													className={`w-10 h-10 rounded-full bg-gradient-to-br ${getRandomColor(
-														user.id,
-													)} flex items-center justify-center text-white text-sm font-semibold shadow-lg flex-shrink-0`}
-												>
-													{getInitials(user.name)}
-												</div>
-												<div>
-													<p className='font-medium text-slate-800 dark:text-slate-100'>
-														{user.name}
-													</p>
-													<p className='text-sm text-slate-500 dark:text-slate-400'>
-														ID: {user.id}
-													</p>
-												</div>
-											</div>
-										</td>
-										<td className='px-6 py-4'>
-											<div className='flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400'>
-												<Mail className='w-4 h-4 flex-shrink-0' />
-												<span className='truncate max-w-xs'>{user.email}</span>
-											</div>
-										</td>
-										<td className='px-6 py-4 whitespace-nowrap'>
-											{user.phone ? (
-												<div className='flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400'>
-													<Phone className='w-4 h-4 flex-shrink-0' />
-													<span>{user.phone}</span>
-												</div>
-											) : (
-												<span className='text-sm text-slate-400 dark:text-slate-500'>N/A</span>
-											)}
-										</td>
-										<td className='px-6 py-4 whitespace-nowrap'>
-											{user.address ? (
-												<div className='flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400'>
-													<MapPin className='w-4 h-4 flex-shrink-0' />
-													<span>{user.address.city}</span>
-												</div>
-											) : (
-												<span className='text-sm text-slate-400 dark:text-slate-500'>N/A</span>
-											)}
-										</td>
-										<td className='px-6 py-4'>
-											<span className='text-sm text-slate-600 dark:text-slate-400 truncate max-w-xs block'>
-												{user.company?.name || 'N/A'}
-											</span>
-										</td>
-										<td className='px-6 py-4 whitespace-nowrap text-right'>
-											<button className='p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors'>
-												<MoreVertical className='w-5 h-5 text-slate-600 dark:text-slate-400' />
-											</button>
-										</td>
-									</tr>
-								))}
+								{loading
+									? [...Array(5)].map((_, i) => (
+											<tr key={`skeleton-${i}`} className='h-3 m-0 p-0'>
+												<td className='px-2 py-1 whitespace-nowrap'>
+													<div className='flex items-center gap-2'>
+														<Skeleton circle width={32} height={30} />
+														<div>
+															<Skeleton width={100} height={12} />
+															<Skeleton width={60} height={12} />
+														</div>
+													</div>
+												</td>
+												<td className='px-2 '>
+													<Skeleton width={180} height={8} />
+												</td>
+												<td className='px-2 '>
+													<Skeleton width={120} height={8} />
+												</td>
+												<td className='px-2 '>
+													<Skeleton width={100} height={8} />
+												</td>
+												<td className='px-2 '>
+													<Skeleton width={140} height={8} />
+												</td>
+												<td className='px-2 '>
+													<div className='flex justify-center'>
+														<Skeleton width={10} height={20} />
+													</div>
+												</td>
+											</tr>
+									  ))
+									: filteredUsers.length === 0
+									? [...Array(1)].map((_, i) => (
+											<tr key={`empty-${i}`}>
+												<td colSpan={6} className='px-3 py-2 text-center'>
+													<div className='flex flex-col items-center justify-center'>
+														<div className='w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center mb-3'>
+															<Search className='w-7 h-7 text-slate-400' />
+														</div>
+														<p className='text-slate-600 dark:text-slate-400 font-medium mb-1'>
+															No users found
+														</p>
+														<p className='text-sm text-slate-500 dark:text-slate-500'>
+															Try adjusting your search
+														</p>
+													</div>
+												</td>
+											</tr>
+									  ))
+									: filteredUsers.map(user => (
+											<tr
+												key={user.id}
+												className='hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors'
+											>
+												<td className='px-3 py-2 whitespace-nowrap'>
+													<div className='flex items-center gap-2'>
+														<div
+															className={`w-8 h-8 rounded-full bg-gradient-to-br ${getRandomColor(
+																user.id,
+															)} flex items-center justify-center text-white text-xs font-semibold shadow-lg flex-shrink-0`}
+														>
+															{getInitials(user.name)}
+														</div>
+														<div>
+															<p className='m-0 font-medium text-sm text-slate-800 dark:text-slate-100'>
+																{user.name}
+															</p>
+															<p className='m-0 text-xs text-slate-500 dark:text-slate-400'>
+																ID: {user.id}
+															</p>
+														</div>
+													</div>
+												</td>
+												<td className='px-3 py-2'>
+													<div className='flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400'>
+														<Mail className='w-3.5 h-3.5 flex-shrink-0' />
+														<span className='truncate max-w-xs'>{user.email}</span>
+													</div>
+												</td>
+												<td className='px-3 py-2 whitespace-nowrap'>
+													{user.phone ? (
+														<div className='flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400'>
+															<Phone className='w-3.5 h-3.5 flex-shrink-0' />
+															<span>{user.phone}</span>
+														</div>
+													) : (
+														<span className='text-sm text-slate-400 dark:text-slate-500'>N/A</span>
+													)}
+												</td>
+												<td className='px-3 py-2 whitespace-nowrap'>
+													{user.address ? (
+														<div className='flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400'>
+															<MapPin className='w-3.5 h-3.5 flex-shrink-0' />
+															<span>{user.address.city}</span>
+														</div>
+													) : (
+														<span className='text-sm text-slate-400 dark:text-slate-500'>N/A</span>
+													)}
+												</td>
+												<td className='px-3 py-2'>
+													<span className='text-sm text-slate-600 dark:text-slate-400 truncate max-w-xs block'>
+														{user.company?.name || 'N/A'}
+													</span>
+												</td>
+												<td className='px-3 py-2 whitespace-nowrap text-center'>
+													<Button variant='ghost' size='icon'>
+														<MoreVertical className='w-4 h-4' />
+													</Button>
+												</td>
+											</tr>
+									  ))}
 							</tbody>
 						</table>
 					</div>
@@ -309,7 +341,7 @@ export default function UsersPage() {
 
 			{/* Pagination */}
 			{!loading && !error && filteredUsers.length > 0 && (
-				<div className='bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-4'>
+				<div className='bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-3'>
 					<div className='flex items-center justify-between'>
 						<p className='text-sm text-slate-600 dark:text-slate-400'>
 							Showing{' '}
@@ -319,47 +351,37 @@ export default function UsersPage() {
 							of <span className='font-medium text-slate-800 dark:text-slate-100'>10</span> users
 						</p>
 						<div className='flex items-center gap-2'>
-							<button
+							<Button
+								variant='outline'
 								onClick={() => setPage(prev => Math.max(1, prev - 1))}
 								disabled={page === 1}
-								className='flex items-center gap-2 px-4 py-2 border border-slate-200 dark:border-slate-700 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-slate-700 dark:text-slate-200'
+								icon={<ChevronLeft className='w-4 h-4' />}
 							>
-								<ChevronLeft className='w-4 h-4' />
 								<span className='hidden sm:inline'>Previous</span>
-							</button>
+							</Button>
 
 							<div className='flex items-center gap-1'>
 								{[...Array(totalPages)].map((_, i) => (
-									<button
-										type='button'
+									<Button
 										key={i + 1}
-										onClick={e => {
-											e.preventDefault()
-											setPage(i + 1)
-										}}
-										className={`w-10 h-10 rounded-lg font-medium transition-all ${
-											page === i + 1
-												? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg shadow-blue-500/30'
-												: 'border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800'
-										}`}
+										variant={page === i + 1 ? 'gradient' : 'outline'}
+										size='icon'
+										onClick={() => setPage(i + 1)}
 									>
 										{i + 1}
-									</button>
+									</Button>
 								))}
 							</div>
 
-							<button
-								type='button'
-								onClick={e => {
-									e.preventDefault()
-									setPage(prev => Math.min(totalPages, prev + 1))
-								}}
+							<Button
+								variant='outline'
+								onClick={() => setPage(prev => Math.min(totalPages, prev + 1))}
 								disabled={page === totalPages}
-								className='flex items-center gap-2 px-4 py-2 border border-slate-200 dark:border-slate-700 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-slate-700 dark:text-slate-200'
+								icon={<ChevronRight className='w-4 h-4' />}
+								iconPosition='right'
 							>
 								<span className='hidden sm:inline'>Next</span>
-								<ChevronRight className='w-4 h-4' />
-							</button>
+							</Button>
 						</div>
 					</div>
 				</div>
