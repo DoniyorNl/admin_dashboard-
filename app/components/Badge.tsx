@@ -1,4 +1,3 @@
-// src/components/Badge.tsx
 'use client'
 import { ReactNode } from 'react'
 import clsx from 'clsx'

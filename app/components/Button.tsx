@@ -1,4 +1,5 @@
 import { ButtonHTMLAttributes, ReactNode } from 'react'
+import clsx from 'clsx'
 
 type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
 	variant?: 'primary' | 'secondary' | 'danger' | 'success' | 'ghost' | 'gradient' | 'outline'
@@ -34,7 +35,7 @@ const sizeClasses = {
 	icon: 'p-2',
 }
 
-const Button = ({
+export default function Button({
 	variant = 'gradient',
 	size = 'md',
 	fullWidth = false,
@@ -45,13 +46,17 @@ const Button = ({
 	icon,
 	iconPosition = 'left',
 	...props
-}: ButtonProps) => {
+}: ButtonProps) {
 	const baseClasses =
 		'inline-flex items-center justify-center gap-2 rounded-lg font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:focus:ring-blue-400 disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none'
 
-	const buttonClasses = `${baseClasses} ${variantClasses[variant]} ${sizeClasses[size]} ${
-		fullWidth ? 'w-full' : ''
-	} ${className}`
+	const buttonClasses = clsx(
+		baseClasses,
+		variantClasses[variant],
+		sizeClasses[size],
+		fullWidth && 'w-full',
+		className,
+	)
 
 	return (
 		<button className={buttonClasses} disabled={disabled || loading} {...props}>
@@ -83,5 +88,3 @@ const Button = ({
 		</button>
 	)
 }
-
-export default Button
