@@ -4,7 +4,7 @@ import clsx from 'clsx'
 
 type BadgeProps = {
 	children: ReactNode
-	color?: 'blue' | 'green' | 'red' | 'gray'
+	color?: 'blue' | 'green' | 'red' | 'gray' | 'yellow'
 	className?: string
 }
 
@@ -13,6 +13,7 @@ const colorClasses = {
 	green: 'bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-100',
 	red: 'bg-red-100 text-red-800 dark:bg-red-800 dark:text-red-100',
 	gray: 'bg-gray-200 text-gray-800 dark:bg-gray-700 dark:text-gray-200',
+	yellow: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-800 dark:text-yellow-100',
 }
 
 export default function Badge({ children, color = 'blue', className }: BadgeProps) {

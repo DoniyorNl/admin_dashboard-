@@ -1,5 +1,4 @@
-// File: app/(dashboard)/dashboard/products/page.tsx
-// Server Component: initialProducts fetch qilinadi va client component-ga uzatiladi
+//app/products/page.tsx
 import { Product } from '@/types/products'
 import ProductsPageClient from './ProductsPageClient'
 

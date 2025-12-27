@@ -1,25 +1,26 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import Button from '@/components/UI/Button'
+import Input from '@/components/UI/Input'
 import {
-	Search,
-	Filter,
-	Download,
-	UserPlus,
-	MoreVertical,
-	Mail,
-	Phone,
-	MapPin,
-	RefreshCw,
+	AlertCircle,
 	ChevronLeft,
 	ChevronRight,
-	AlertCircle,
+	Download,
+	Filter,
+	Mail,
+	MapPin,
+	MoreVertical,
+	Phone,
+	RefreshCw,
+	Search,
+	UserPlus,
 } from 'lucide-react'
-import Button from '@/components/Button'
+import { useEffect, useState } from 'react'
 import Skeleton from 'react-loading-skeleton'
 import 'react-loading-skeleton/dist/skeleton.css'
 
-interface User {
+export interface User {
 	id: number
 	name: string
 	email: string
@@ -32,7 +33,6 @@ interface User {
 		name: string
 	}
 }
-
 export default function UsersPage() {
 	const [users, setUsers] = useState<User[]>([])
 	const [page, setPage] = useState(1)
@@ -53,7 +53,7 @@ export default function UsersPage() {
 			setTimeout(() => {
 				setUsers(data)
 				setLoading(false)
-			}, 5000)
+			}, 200)
 		} catch (err) {
 			setError('Failed to load users. Please try again.')
 			console.error(err)
@@ -164,12 +164,11 @@ export default function UsersPage() {
 				<div className='flex flex-col sm:flex-row gap-3'>
 					<div className='flex-1 relative'>
 						<Search className='absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400' />
-						<input
-							type='text'
-							placeholder='Search users by name or email...'
+						<Input
 							value={searchQuery}
 							onChange={e => setSearchQuery(e.target.value)}
-							className='w-full pl-10 pr-4 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-800 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 transition-all'
+							placeholder='Search users by name or email...'
+							icon={<Search className='w-5 h-5 text-slate-400' />}
 						/>
 					</div>
 					<div className='flex gap-2'>

@@ -12,7 +12,7 @@ export default function Card({ children, className }: CardProps) {
 	return (
 		<div
 			className={clsx(
-				'bg-white dark:bg-gray-800 rounded-lg shadow p-4 transition-colors',
+				'bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg px-3 py-2',
 				className,
 			)}
 		>

@@ -1,20 +1,13 @@
 // dashboard/products/ProductsPageClient.tsx
 'use client'
 
-import { useState } from 'react'
-import {
-	Search,
-	Filter,
-	Download,
-	Package,
-	TrendingUp,
-	AlertCircle,
-	MoreVertical,
-} from 'lucide-react'
-import Badge from '@/components/Badge'
-import Button from '@/components/Button'
-import Modal from '@/components/Modal'
+import AddProductModal from '@/components/features/products/AddProductModal'
+import Badge from '@/components/UI/Badge'
+import Button from '@/components/UI/Button'
+import Input from '@/components/UI/Input'
 import { Product, ProductStatus } from '@/types/products'
+import { AlertCircle, Download, Package, Search, TrendingUp } from 'lucide-react'
+import { useState } from 'react'
 
 type Props = {
 	initialProducts: Product[]
@@ -156,12 +149,11 @@ export default function ProductsPageClient({ initialProducts }: Props) {
 				<div className='flex flex-col sm:flex-row gap-4'>
 					<div className='flex-1 relative'>
 						<Search className='absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400' />
-						<input
-							type='text'
-							placeholder='Search products by name or category...'
+						<Input
 							value={searchQuery}
 							onChange={e => setSearchQuery(e.target.value)}
-							className='w-full pl-10 pr-4 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-800 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500'
+							placeholder='Search products by name or category...'
+							icon={<Search className='w-5 h-5 text-slate-400' />}
 						/>
 					</div>
 					<div className='flex gap-2'>
@@ -176,10 +168,10 @@ export default function ProductsPageClient({ initialProducts }: Props) {
 							<option value='draft'>Draft</option>
 							<option value='out_of_stock'>Out of Stock</option>
 						</select>
-						<button className='flex items-center gap-2 px-4 py-2 border border-slate-200 dark:border-slate-700 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors text-slate-700 dark:text-slate-200'>
+						<Button>
 							<Download className='w-4 h-4' />
 							<span className='hidden sm:inline'>Export</span>
-						</button>
+						</Button>
 					</div>
 				</div>
 			</div>
@@ -284,7 +276,7 @@ export default function ProductsPageClient({ initialProducts }: Props) {
 
 			{/* Modal */}
 			{modalOpen && (
-				<Modal
+				<AddProductModal
 					initialData={editProduct}
 					onClose={() => {
 						setModalOpen(false)

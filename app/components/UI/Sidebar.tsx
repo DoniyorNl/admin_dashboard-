@@ -212,11 +212,11 @@ export default function Sidebar({ isCollapsed, setIsCollapsed }: SidebarProps) {
 					<div className='px-4 pt-4 border-t border-slate-200 dark:border-slate-800'>
 						<div className='flex items-center gap-3 p-3 rounded-lg bg-slate-50 dark:bg-slate-800/50'>
 							<div className='w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white text-sm font-semibold shadow-lg shadow-blue-500/20'>
-								JD
+								DN
 							</div>
 							<div className='flex-1 min-w-0'>
 								<p className='text-sm font-medium text-slate-800 dark:text-slate-100 truncate'>
-									John Doe
+									Doni Nasri
 								</p>
 								<p className='text-xs text-slate-500 dark:text-slate-400 truncate'>Administrator</p>
 							</div>

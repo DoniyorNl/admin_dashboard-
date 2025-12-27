@@ -1,4 +1,4 @@
-// src/app/api/register/route.ts
+// src/app/authAPI/login/route.ts
 import { NextResponse } from 'next/server'
 
 export async function POST(req: Request) {
@@ -8,7 +8,8 @@ export async function POST(req: Request) {
 		return NextResponse.json({ error: 'Invalid data' }, { status: 400 })
 	}
 
-	const response = NextResponse.json({ success: true })
+	// Set httpOnly cookie for server-side auth simulation
+	const response = NextResponse.json({ success: true, token: 'fake-jwt-token', username })
 
 	response.cookies.set('token', 'fake-jwt-token', {
 		httpOnly: true,

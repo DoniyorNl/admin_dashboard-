@@ -3,12 +3,13 @@ import clsx from 'clsx'
 
 type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
 	variant?: 'primary' | 'secondary' | 'danger' | 'success' | 'ghost' | 'gradient' | 'outline'
-	children: ReactNode
+	children?: React.ReactNode
 	fullWidth?: boolean
 	size?: 'sm' | 'md' | 'lg' | 'icon'
 	loading?: boolean
 	icon?: ReactNode
 	iconPosition?: 'left' | 'right'
+	onClick?: () => void
 }
 
 const variantClasses = {

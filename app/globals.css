@@ -48,6 +48,14 @@ html {
 
 body {
 	min-height: 100vh;
+	transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.filter-item {
+	@apply w-full text-left px-3 py-2 rounded-lg
+	text-sm text-slate-700 dark:text-slate-200
+	hover:bg-slate-100 dark:hover:bg-slate-800
+	transition-colors;
 }
 
 /* Remove default list styles */

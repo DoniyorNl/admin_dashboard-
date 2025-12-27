@@ -1,14 +1,20 @@
+'use client'
+
 import { useState, useRef, useEffect } from 'react'
 import { User, Settings, LogOut, Bell, Search, Menu, Moon, Sun, ChevronDown } from 'lucide-react'
+import { useTheme } from 'next-themes'
 
 export default function Header() {
 	const [username, setUsername] = useState<string | null>(null)
 	const [isDropdownOpen, setIsDropdownOpen] = useState(false)
-	const [isDarkMode, setIsDarkMode] = useState(true)
 	const [hasNotifications, setHasNotifications] = useState(true)
 	const [isSearchOpen, setIsSearchOpen] = useState(false)
 	const dropdownRef = useRef<HTMLDivElement | null>(null)
 	const searchRef = useRef<HTMLDivElement | null>(null)
+	const { theme, setTheme, systemTheme } = useTheme()
+	const [mounted, setMounted] = useState(false)
+
+	useEffect(() => setMounted(true), [])
 
 	// Cookie'dan username olish
 	useEffect(() => {
@@ -20,40 +26,28 @@ export default function Header() {
 		setUsername(name)
 	}, [])
 
-	// Dropdown tashqarisiga bosilganda yopish
+	// Dropdown yoki search tashqarisiga bosilganda yopish
 	useEffect(() => {
 		const handleClickOutside = (event: MouseEvent) => {
 			const target = event.target as Node
-
-			if (dropdownRef.current && !dropdownRef.current.contains(target)) {
-				setIsDropdownOpen(false)
-			}
-
-			if (searchRef.current && !searchRef.current.contains(target)) {
-				setIsSearchOpen(false)
-			}
+			if (dropdownRef.current && !dropdownRef.current.contains(target)) setIsDropdownOpen(false)
+			if (searchRef.current && !searchRef.current.contains(target)) setIsSearchOpen(false)
 		}
-
 		document.addEventListener('mousedown', handleClickOutside)
 		return () => document.removeEventListener('mousedown', handleClickOutside)
 	}, [])
-	// Logout funksiyasi
+
+	// Logout
 	const handleLogout = async () => {
 		setIsDropdownOpen(false)
 		try {
-			await fetch('/api/logout', { method: 'POST' })
-			// Cookie'larni tozalash
+			await fetch('/authAPI/logout', { method: 'POST' })
 			document.cookie = 'username=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;'
-			// Login sahifasiga yo'naltirish
 			window.location.href = '/login'
 		} catch (error) {
 			console.error('Logout error:', error)
 			alert('Logout failed. Please try again.')
 		}
-	}
-
-	const toggleDarkMode = () => {
-		setIsDarkMode(!isDarkMode)
 	}
 
 	const getInitials = (name: string | null) => {
@@ -66,16 +60,20 @@ export default function Header() {
 			.slice(0, 2)
 	}
 
+	if (!mounted) return null // SSR bilan moslashuv
+
+	// Dark mode aniqlash
+	const isDarkMode = theme === 'dark' || (theme === 'system' && systemTheme === 'dark')
+	const toggleDarkMode = () => setTheme(isDarkMode ? 'light' : 'dark')
+
 	return (
 		<header className='flex items-center justify-between h-16 px-6 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 sticky top-0 z-50 backdrop-blur-sm bg-opacity-95 dark:bg-opacity-95'>
-			{/* Left Section - Logo & Menu */}
+			{/* Left Section */}
 			<div className='flex items-center gap-4'>
-				{/* Mobile Menu Button */}
 				<button className='lg:hidden p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors'>
 					<Menu className='w-5 h-5 text-slate-600 dark:text-slate-300' />
 				</button>
 
-				{/* Logo */}
 				<div className='flex items-center gap-3'>
 					<div className='w-9 h-9 rounded-lg bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-600 flex items-center justify-center text-white font-bold text-sm shadow-lg shadow-blue-500/30'>
 						AD
@@ -86,7 +84,7 @@ export default function Header() {
 				</div>
 			</div>
 
-			{/* Right Section - Actions & User */}
+			{/* Right Section */}
 			<div className='flex items-center gap-2'>
 				{/* Search */}
 				<div ref={searchRef} className='relative'>
@@ -113,12 +111,12 @@ export default function Header() {
 				{/* Dark Mode Toggle */}
 				<button
 					onClick={toggleDarkMode}
-					className='p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors'
+					className='p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors duration-300'
 				>
 					{isDarkMode ? (
 						<Sun className='w-5 h-5 text-yellow-500' />
 					) : (
-						<Moon className='w-5 h-5 text-slate-600' />
+						<Moon className='w-5 h-5 text-slate-600 dark:text-slate-300' />
 					)}
 				</button>
 
@@ -130,7 +128,6 @@ export default function Header() {
 					)}
 				</button>
 
-				{/* Divider */}
 				<div className='hidden sm:block w-px h-6 bg-slate-200 dark:bg-slate-700 mx-2' />
 
 				{/* User Dropdown */}
@@ -154,7 +151,6 @@ export default function Header() {
 						/>
 					</button>
 
-					{/* Dropdown Menu */}
 					{isDropdownOpen && (
 						<div className='absolute right-0 mt-2 w-64 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-xl overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200'>
 							{/* User Info */}
