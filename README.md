@@ -11,7 +11,7 @@ This is a Next.js (App Router) admin dashboard that uses a small local JSON back
 - UI: Tailwind CSS + small component library under `app/components/UI/`.
 - Routing & layouts: App Router under `app/` with nested dashboard layout at `app/(dashboard)/dashboard/layout.tsx`.
 - API layer: `lib/api/*` contains `apiFetch` and product helpers. `API_BASE_URL` is read from `NEXT_PUBLIC_API_URL` or defaults to `http://localhost:4000`.
-- Mock backend: `backend/db.json` served by `json-server` (development only).
+- Mock backend: `backend/product.db.json` served by `json-server` (development only).
 - Auth: lightweight mock auth under `app/authAPI/*` (server routes set httpOnly cookies). There is also a client-side `localStorage` token copy used for client guards.
 
 Key behaviors:
@@ -53,7 +53,7 @@ Bu loyiha Next.js (App Router) asosida yozilgan admin dashboard bo'lib, demo ma'
 - UI: Tailwind CSS va kichik UI komponentlari `app/components/UI/` da joylashgan.
 - Router va layoutlar: `app/` ichida App Router; dashboard layout manzili: `app/(dashboard)/dashboard/layout.tsx`.
 - API qatlami: `lib/api/*` ichida `apiFetch` va mahsulotlar uchun yordamchi funksiyalar bor. `API_BASE_URL` `NEXT_PUBLIC_API_URL` dan olinadi yoki `http://localhost:4000` bo'ladi.
-- Mock backend: `backend/db.json`, `json-server` orqali dev muhitida ishlaydi.
+- Mock backend: `backend/product.db.json`, `json-server` orqali dev muhitida ishlaydi.
 - Autentifikatsiya: `app/authAPI/*` server route'lari httpOnly cookie o'rnatadi; mijoz tomonda esa `localStorage` ga token nusxasi saqlanadi, bu client-gard uchun ishlatiladi.
 
 Asosiy xususiyatlar:
@@ -101,7 +101,7 @@ Izohlar:
 - `lib/api/products.ts` — products CRUD helpers, shu jumladan `getPaginated` method (uses direct `fetch` to read `X-Total-Count` header).
 - `lib/auth.ts` — client helpers: `login`, `register`, `logout` (now store token in `localStorage` after server response).
 
-- `backend/db.json` — mock data used by `json-server`.
+- `backend/product.db.json` — mock data used by `json-server`.
 
 ## Development notes & decisions
 

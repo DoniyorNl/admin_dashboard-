@@ -1,27 +1,48 @@
-import React from 'react'
+import { ReactNode } from 'react'
+import { ArrowUpRight, ArrowDownRight } from 'lucide-react'
+import clsx from 'clsx'
 
-type Props = {
-  title: string
-  value: string | number
-  delta?: string
-  trend?: 'up' | 'down' | 'flat'
-  icon?: React.ReactNode
+interface KpiCardProps {
+	title: string
+	value: string | number
+	delta?: number
+	trend?: 'up' | 'down'
+	icon?: ReactNode
 }
 
-export default function KpiCard({ title, value, delta, trend = 'flat', icon }: Props) {
-  const trendColor = trend === 'up' ? 'text-green-600' : trend === 'down' ? 'text-red-600' : 'text-gray-500'
-  return (
-    <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
-      <div className="flex items-center justify-between">
-        <div>
-          <p className="text-xs text-slate-500 dark:text-slate-400">{title}</p>
-          <p className="text-2xl font-semibold text-slate-800 dark:text-slate-100">{value}</p>
-        </div>
-        <div className="flex items-center gap-3">
-          {icon && <div className="w-10 h-10 rounded-md bg-slate-100 dark:bg-slate-900 flex items-center justify-center">{icon}</div>}
-          {delta && <div className={`text-sm font-medium ${trendColor}`}>{delta}</div>}
-        </div>
-      </div>
-    </div>
-  )
+export default function KpiCard({ title, value, delta, trend, icon }: KpiCardProps) {
+	const isUp = trend === 'up'
+
+	return (
+		<div className='rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4'>
+			<div className='flex items-center justify-between'>
+				<p className='text-sm text-slate-600 dark:text-slate-400'>{title}</p>
+				{icon && (
+					<div className='w-8 h-8 rounded-md bg-slate-100 dark:bg-slate-800 flex items-center justify-center'>
+						{icon}
+					</div>
+				)}
+			</div>
+
+			<div className='mt-2'>
+				<p className='text-2xl font-semibold text-slate-900 dark:text-slate-100'>{value}</p>
+
+				{delta !== undefined && trend && (
+					<div
+						className={clsx(
+							'mt-1 inline-flex items-center text-sm font-medium',
+							isUp ? 'text-emerald-600' : 'text-red-600',
+						)}
+					>
+						{isUp ? (
+							<ArrowUpRight className='w-4 h-4 mr-1' />
+						) : (
+							<ArrowDownRight className='w-4 h-4 mr-1' />
+						)}
+						{delta}%
+					</div>
+				)}
+			</div>
+		</div>
+	)
 }

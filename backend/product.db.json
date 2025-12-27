@@ -57,6 +57,15 @@
 			"text": "Can you review my PR?",
 			"createdAt": "2025-12-03T14:20:00.000Z",
 			"read": false
+		},
+		{
+			"id": 1766862085825,
+			"conversationId": "team-1",
+			"from": "You",
+			"to": "Them",
+			"text": "Hi",
+			"createdAt": "2025-12-27T19:01:25.825Z",
+			"read": true
 		}
 	]
 }

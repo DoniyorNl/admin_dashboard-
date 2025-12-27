@@ -1,4 +1,6 @@
-const BASE_URL = 'http://localhost:4000/products'
+import { API_BASE_URL } from './api/config'
+
+const BASE_URL = `${API_BASE_URL}/products`
 
 export type Product = {
 	id: number

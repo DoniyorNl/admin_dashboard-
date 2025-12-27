@@ -1,14 +1,18 @@
 //app/products/page.tsx
 import { Product } from '@/types/products'
 import ProductsPageClient from './ProductsPageClient'
+import { productsApi } from 'lib/api/products'
 
 async function getProducts(): Promise<Product[]> {
-  const res = await fetch('http://localhost:4000/products', { cache: 'no-store' })
-  if (!res.ok) throw new Error('Failed to fetch products')
-  return res.json()
+	try {
+		return await productsApi.getAll()
+	} catch (err) {
+		console.error('products: fetch error', err)
+		return []
+	}
 }
 
 export default async function ProductsPage() {
-  const products = await getProducts()
-  return <ProductsPageClient initialProducts={products} />
+	const products = await getProducts()
+	return <ProductsPageClient initialProducts={products} />
 }

@@ -46,15 +46,6 @@ export default function Sidebar({ isCollapsed, setIsCollapsed }: SidebarProps) {
 			href: '/dashboard/messages',
 			badge: '5',
 		},
-		{ id: 'calendar', label: 'Calendar', icon: Calendar, href: '/dashboard/calendar', badge: null },
-		{
-			id: 'documents',
-			label: 'Documents',
-			icon: FileText,
-			href: '/dashboard/documents',
-			badge: null,
-		},
-		{ id: 'files', label: 'Files', icon: Folder, href: '/dashboard/files', badge: null },
 	]
 
 	const bottomItems = [
