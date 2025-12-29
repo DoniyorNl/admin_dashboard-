@@ -1,23 +1,14 @@
 'use client'
 
-import { useState, useEffect, useMemo, useRef } from 'react'
-import {
-	AlertCircle,
-	ChevronLeft,
-	ChevronRight,
-	Download,
-	Filter,
-	RefreshCw,
-	Search,
-	MoreVertical,
-} from 'lucide-react'
-import Button from '@/components/UI/Button'
-import Input from '@/components/UI/Input'
 import Badge from '@/components/UI/Badge'
 import BaseModal from '@/components/UI/BaseModal'
+import Button from '@/components/UI/Button'
+import Input from '@/components/UI/Input'
+import { Pagination } from '@/components/UI/Pagination'
+import { AlertCircle, Download, Filter, MoreVertical, RefreshCw, Search } from 'lucide-react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import Skeleton from 'react-loading-skeleton'
 import 'react-loading-skeleton/dist/skeleton.css'
-import { Pagination } from '@/components/UI/Pagination'
 
 export interface Order {
 	id: number
@@ -56,21 +47,23 @@ export default function OrdersPage() {
 			const data = await res.json()
 
 			// Map data to Order type
-			const ordersData: Order[] = data.map((u: any, i: number) => ({
-				id: u.id,
-				customerName: u.name,
-				email: u.email,
-				phone: u.phone,
-				status: ['Pending', 'Processing', 'Completed', 'Canceled'][i % 4] as Order['status'],
-				total: Math.floor(Math.random() * 500) + 50,
-				date: new Date().toISOString().split('T')[0],
-			}))
+			const ordersData: Order[] = data.map(
+				(u: { id: number; name: string; email: string; phone?: string }, i: number) => ({
+					id: u.id,
+					customerName: u.name,
+					email: u.email,
+					phone: u.phone,
+					status: ['Pending', 'Processing', 'Completed', 'Canceled'][i % 4] as Order['status'],
+					total: Math.floor(Math.random() * 500) + 50,
+					date: new Date().toISOString().split('T')[0],
+				}),
+			)
 
 			setTimeout(() => {
 				setOrders(ordersData)
 				setLoading(false)
 			}, 200) // Smooth transition
-		} catch (err) {
+		} catch {
 			setError('Failed to load orders. Please try again.')
 			setLoading(false)
 		}
@@ -78,6 +71,7 @@ export default function OrdersPage() {
 
 	useEffect(() => {
 		fetchOrders()
+		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [page])
 
 	const getStatusColor = (status: Order['status']) => {

@@ -1,8 +1,8 @@
-import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
+import { NextResponse } from 'next/server'
 
 export function middleware(request: NextRequest) {
-	const token = request.cookies.get('token')?.value
+	const token = request.cookies.get('auth_token')?.value ?? request.cookies.get('token')?.value
 	const { pathname } = request.nextUrl
 
 	if (pathname.startsWith('/dashboard') && !token) {
@@ -10,6 +10,10 @@ export function middleware(request: NextRequest) {
 	}
 
 	if (pathname === '/login' && token) {
+		return NextResponse.redirect(new URL('/dashboard', request.url))
+	}
+
+	if (pathname === '/register' && token) {
 		return NextResponse.redirect(new URL('/dashboard', request.url))
 	}
 

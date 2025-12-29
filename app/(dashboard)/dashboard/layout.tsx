@@ -8,7 +8,7 @@ import ClientDashboardLayout from './ClientDashboardLayout'
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
 	// Server-side cookie tekshiruvi
 	const cookiesList = await cookies()
-	const token = cookiesList.get('token')?.value
+	const token = cookiesList.get('auth_token')?.value ?? cookiesList.get('token')?.value
 
 	if (!token) {
 		// Token yo'q bo'lsa server tomonidan login sahifasiga yo'naltiramiz

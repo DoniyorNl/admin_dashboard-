@@ -1,52 +1,99 @@
-// lib/api/config.ts
-export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'
+const AUTH_API_BASE_URL = process.env.NEXT_PUBLIC_AUTH_API_URL || 'http://localhost:4001'
 
 export const EXTERNAL_APIS = {
 	jsonPlaceholder: 'https://jsonplaceholder.typicode.com',
-	fakeStore: 'https://fakestoreapi.com',
+} as const
+
+// ✅ Yangi response type
+export interface ApiResponse<T> {
+	success: boolean
+	data: T | null
+	error: string | null
+	status: number
 }
 
-// Reusable fetch wrapper
-export async function apiFetch<T>(url: string, options?: RequestInit): Promise<T> {
-	const response = await fetch(url, {
+// ✅ Yangi apiFetch - error throw qilmaydi
+export async function apiFetch<T = unknown>(
+	endpoint: string,
+	options: RequestInit = {},
+): Promise<ApiResponse<T>> {
+	const url = endpoint.startsWith('http')
+		? endpoint
+		: endpoint.startsWith('/authAPI')
+		? endpoint
+		: `${API_BASE_URL}${endpoint}`
+
+	const config: RequestInit = {
 		...options,
 		headers: {
 			'Content-Type': 'application/json',
-			...options?.headers,
+			...options.headers,
 		},
-	})
-
-	if (!response.ok) {
-		throw new Error(`API Error: ${response.status} ${response.statusText}`)
 	}
-
-	return response.json()
-}
-
-// A safe fetch helper used by server pages that must not throw when the
-// backend is unreachable. Returns parsed JSON on success, or `null` on
-// timeout / network error / non-ok response. Uses a short timeout to
-// avoid blocking server renders.
-export async function safeFetchJson(path: string, timeoutMs = 3000): Promise<any | null> {
-	const base = API_BASE_URL.replace(/\/$/, '')
-	const url = `${base}${path.startsWith('/') ? path : `/${path}`}`
-
-	const controller = new AbortController()
-	const id = setTimeout(() => controller.abort(), timeoutMs)
 
 	try {
-		const res = await fetch(url, { signal: controller.signal, cache: 'no-store' })
-		if (!res.ok) {
-			console.error('safeFetchJson: non-ok', res.status, url)
-			return null
+		const response = await fetch(url, config)
+
+		const contentType = response.headers.get('content-type') || ''
+		const isJson = contentType.includes('application/json')
+
+		let payload: unknown = null
+		if (response.status !== 204) {
+			payload = isJson
+				? await response.json().catch(() => null)
+				: await response.text().catch(() => null)
 		}
-		return await res.json()
-	} catch (err) {
-		// Network error, timeout, DNS issues, etc. — return null so callers
-		// can render a graceful fallback instead of crashing the page.
-		console.warn('safeFetchJson error', url, err)
-		return null
-	} finally {
-		clearTimeout(id)
+
+		if (!response.ok) {
+			const message =
+				(typeof payload === 'object' && payload !== null && 'message' in payload
+					? (payload as any).message
+					: typeof payload === 'object' && payload !== null && 'error' in payload
+					? (payload as any).error
+					: null) || `HTTP ${response.status}`
+
+			// ❌ throw new Error(message) - OLIB TASHLADIK
+
+			// ✅ Error object qaytaramiz
+			return {
+				success: false,
+				data: null,
+				error: message,
+				status: response.status,
+			}
+		}
+
+		// ✅ Success
+		return {
+			success: true,
+			data: payload as T,
+			error: null,
+			status: response.status,
+		}
+	} catch (error) {
+		// ✅ Network error
+		return {
+			success: false,
+			data: null,
+			error: error instanceof Error ? error.message : 'Network error',
+			status: 0,
+		}
 	}
 }
+
+// ✅ Eski apiFetch (legacy support) - throw qiladi
+export async function apiFetchLegacy<T = unknown>(
+	endpoint: string,
+	options: RequestInit = {},
+): Promise<T> {
+	const result = await apiFetch<T>(endpoint, options)
+
+	if (!result.success) {
+		throw new Error(result.error || 'Request failed')
+	}
+
+	return result.data as T
+}
+
+export { API_BASE_URL, AUTH_API_BASE_URL }

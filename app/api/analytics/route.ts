@@ -9,7 +9,7 @@ export async function GET(request: Request) {
 		const data = getAnalytics(rangeParam)
 		// Return the analytics object directly so client receives { kpis, revenueSeries, ... }
 		return NextResponse.json(data)
-	} catch (e) {
+	} catch {
 		return NextResponse.json(
 			{ success: false, message: 'Failed to load analytics' },
 			{ status: 500 },

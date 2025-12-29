@@ -86,7 +86,9 @@ export async function safeFetchJsonWithRetry<T = any>(
 		// Agar oxirgi retry bo'lmasa, kutib tur
 		if (i < retries) {
 			const delay = Math.min(1000 * Math.pow(2, i), 5000) // Exponential backoff
-			console.log(`[safeFetchJsonWithRetry] Retrying in ${delay}ms... (${i + 1}/${retries})`)
+			if (process.env.NODE_ENV === 'development') {
+				console.log(`[safeFetchJsonWithRetry] Retrying in ${delay}ms... (${i + 1}/${retries})`)
+			}
 			await new Promise(resolve => setTimeout(resolve, delay))
 		}
 	}

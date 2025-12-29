@@ -7,6 +7,7 @@ import Button from '@/components/UI/Button'
 import Input from '@/components/UI/Input'
 import { Product, ProductStatus } from '@/types/products'
 import { AlertCircle, Download, Package, Search, TrendingUp } from 'lucide-react'
+import Image from 'next/image'
 import { useState } from 'react'
 
 type Props = {
@@ -221,9 +222,11 @@ export default function ProductsPageClient({ initialProducts }: Props) {
 										<td className='px-6 py-4'>
 											<div className='flex items-center gap-3'>
 												{product.image ? (
-													<img
+													<Image
 														src={product.image}
 														alt={product.name}
+														width={40}
+														height={40}
 														className='w-10 h-10 rounded-lg object-cover'
 													/>
 												) : (

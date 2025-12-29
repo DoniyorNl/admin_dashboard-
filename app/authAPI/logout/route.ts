@@ -1,11 +1,12 @@
-// src/app/authAPI/logout/route.ts
+import { clearAuthCookie } from 'lib/auth/auth'
 import { NextResponse } from 'next/server'
 
 export async function POST() {
-	const response = NextResponse.json({ success: true })
-
-	response.cookies.set('token', '', { maxAge: 0, path: '/' })
-	response.cookies.set('username', '', { maxAge: 0, path: '/' })
-
-	return response
+    try {
+        await clearAuthCookie() // Cookie'ni o'chiradi
+        return NextResponse.json({ success: true })
+    } catch (error) {
+        console.error('Logout error:', error)
+        return NextResponse.json({ error: 'An error occurred during logout' }, { status: 500 })
+    }
 }

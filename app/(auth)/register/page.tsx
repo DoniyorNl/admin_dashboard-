@@ -1,90 +1,86 @@
 'use client'
 
+import { Eye, EyeOff, Lock, Mail, User as UserIcon } from 'lucide-react'
+import Link from 'next/link'
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
-import { register } from 'lib/auth'
+
+import { AuthLayout } from '@/components/auth/AuthLayout'
+import Button from '@/components/UI/Button'
+import Input from '@/components/UI/Input'
+import { useAuthLogic } from '@/hooks/useAuthLogic'
 
 export default function RegisterPage() {
-	const router = useRouter()
-
-	const [username, setUsername] = useState('')
-	const [password, setPassword] = useState('')
-	const [loading, setLoading] = useState(false)
-	const [error, setError] = useState<string | null>(null)
-
-	const handleSubmit = async (e: React.FormEvent) => {
-		e.preventDefault()
-		setError(null)
-		setLoading(true)
-
-		try {
-			await register({ username, password })
-			router.push('/dashboard')
-		} catch (err) {
-			setError('Registration failed. Try another username.')
-		} finally {
-			setLoading(false)
-		}
-	}
+	const { status, form, setForm, handleRegister } = useAuthLogic()
+	const [showPass, setShowPass] = useState(false)
 
 	return (
-		<div
-			className='w-full max-w-md rounded-xl bg-white p-8 shadow-lg
-                    dark:bg-slate-900 dark:shadow-slate-800'
+		<AuthLayout
+			title='Create Account'
+			subtitle='Sign up to get started'
+			icon={<UserIcon className='w-8 h-8 text-white' />}
 		>
-			<h1 className='text-2xl font-semibold text-center text-slate-900 dark:text-slate-100'>
-				Create your account
-			</h1>
-
-			<p className='mt-1 text-center text-sm text-slate-500 dark:text-slate-400'>
-				Sign up to get started
-			</p>
-
-			<form onSubmit={handleSubmit} className='mt-6 space-y-4'>
-				<input
+			<form onSubmit={handleRegister} className='space-y-5'>
+				<Input
+					label='Full Name'
 					type='text'
-					placeholder='Username'
-					value={username}
-					onChange={e => setUsername(e.target.value)}
-					className='w-full rounded-lg border px-4 py-2 text-slate-700
-                     focus:outline-none focus:ring-2 focus:ring-emerald-500
-                     dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100'
+					placeholder='Your name'
+					value={form.name}
+					onChange={e => setForm({ ...form, name: e.target.value })}
+					icon={<UserIcon className='w-5 h-5' />}
 					required
 				/>
 
-				<input
-					type='password'
-					placeholder='Password'
-					value={password}
-					onChange={e => setPassword(e.target.value)}
-					className='w-full rounded-lg border px-4 py-2 text-slate-700
-                     focus:outline-none focus:ring-2 focus:ring-emerald-500
-                     dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100'
+				<Input
+					label='Email Address'
+					type='email'
+					placeholder='name@company.com'
+					value={form.email}
+					onChange={e => setForm({ ...form, email: e.target.value })}
+					icon={<Mail className='w-5 h-5' />}
 					required
 				/>
 
-				{error && <p className='text-sm text-red-600 text-center'>{error}</p>}
+				<Input
+					label='Password'
+					type={showPass ? 'text' : 'password'}
+					placeholder='••••••••'
+					value={form.password}
+					onChange={e => setForm({ ...form, password: e.target.value })}
+					icon={<Lock className='w-5 h-5' />}
+					required
+					rightElement={
+						<button
+							type='button'
+							onClick={() => setShowPass(!showPass)}
+							className='text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors focus:outline-none'
+							aria-label={showPass ? 'Hide password' : 'Show password'}
+							tabIndex={-1}
+						>
+							{showPass ? <EyeOff size={20} /> : <Eye size={20} />}
+						</button>
+					}
+				/>
 
-				<button
-					type='submit'
-					disabled={loading}
-					className='w-full rounded-lg bg-emerald-600 py-2 text-white
-                     hover:bg-emerald-700 transition
-                     disabled:opacity-60'
-				>
-					{loading ? 'Creating account...' : 'Register'}
-				</button>
+				{status.error && (
+					<div className='p-4 bg-red-50 border border-red-100 text-red-600 text-sm rounded-xl text-center font-medium dark:bg-red-900/20 dark:border-red-800 dark:text-red-400'>
+						{status.error}
+					</div>
+				)}
+
+				<Button type='submit' loading={status.loading} fullWidth>
+					Create Account
+				</Button>
+
+				<div className='text-center text-sm text-slate-600 dark:text-slate-400'>
+					Already have an account?{' '}
+					<Link
+						href='/login'
+						className='text-blue-600 dark:text-blue-400 hover:underline font-medium'
+					>
+						Sign in
+					</Link>
+				</div>
 			</form>
-
-			<p className='mt-4 text-center text-sm text-slate-500'>
-				Already have an account?{' '}
-				<span
-					onClick={() => router.push('/login')}
-					className='cursor-pointer text-emerald-600 hover:underline'
-				>
-					Sign in
-				</span>
-			</p>
-		</div>
+		</AuthLayout>
 	)
 }

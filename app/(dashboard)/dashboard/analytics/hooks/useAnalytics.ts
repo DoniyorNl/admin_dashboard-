@@ -58,7 +58,7 @@ export function useAnalytics() {
 				setRevenueSeries(data.revenueSeries)
 				setChannels(data.channels)
 				setRecentOrders(data.recentOrders)
-			} catch (e) {
+			} catch {
 				setError('Failed to load analytics data')
 			} finally {
 				setLoading(false)

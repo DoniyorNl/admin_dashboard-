@@ -1,78 +1,124 @@
 'use client'
 
+import { AuthLayout } from '@/components/auth/AuthLayout'
+import Button from '@/components/UI/Button'
+import Input from '@/components/UI/Input'
+import { useAuthLogic } from '@/hooks/useAuthLogic'
+import { Eye, EyeOff, Lock, Mail, Shield } from 'lucide-react'
+import Link from 'next/link'
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
-import { login } from 'lib/auth'
 
 export default function LoginPage() {
-	const router = useRouter()
+	const { status, setStatus, form, setForm, handleLogin, handle2FA } = useAuthLogic()
+	const [showPass, setShowPass] = useState(false)
 
-	const [username, setUsername] = useState('')
-	const [password, setPassword] = useState('')
-	const [loading, setLoading] = useState(false)
-	const [error, setError] = useState<string | null>(null)
+	// 2FA step
+	if (status.step === '2fa') {
+		return (
+			<AuthLayout
+				title='Security Check'
+				subtitle='Enter the 6-digit code from your authenticator app'
+				icon={<Shield className='w-8 h-8 text-white' />}
+			>
+				<form onSubmit={handle2FA} className='space-y-6'>
+					<Input
+						type='text'
+						maxLength={6}
+						value={form.code}
+						onChange={e => setForm({ ...form, code: e.target.value.replace(/\D/g, '') })}
+						className='text-center text-3xl font-mono tracking-widest'
+						placeholder='000000'
+						autoFocus
+						required
+					/>
 
-	const handleSubmit = async (e: React.FormEvent) => {
-		e.preventDefault()
-		setError(null)
-		setLoading(true)
+					{status.error && (
+						<div className='p-4 bg-red-50 border border-red-100 text-red-600 text-sm rounded-xl text-center font-medium dark:bg-red-900/20 dark:border-red-800 dark:text-red-400'>
+							{status.error}
+						</div>
+					)}
 
-		try {
-			await login({ username, password })
-			router.push('/dashboard')
-		} catch (err) {
-			setError('Invalid username or password')
-		} finally {
-			setLoading(false)
-		}
+					<Button
+						type='submit'
+						loading={status.loading}
+						disabled={form.code.length !== 6}
+						fullWidth
+					>
+						Verify & Continue
+					</Button>
+
+					<Button
+						type='button'
+						variant='ghost'
+						onClick={() => setStatus(s => ({ ...s, step: 'login', error: '' }))}
+						fullWidth
+					>
+						← Back to Login
+					</Button>
+				</form>
+			</AuthLayout>
+		)
 	}
 
+	// Login step
 	return (
-		<div
-			className='w-full max-w-md rounded-xl bg-white p-8 shadow-lg
-                    dark:bg-slate-900'
+		<AuthLayout
+			title='Welcome Back'
+			subtitle='Sign in to your account'
+			icon={<Lock className='w-8 h-8 text-white' />}
 		>
-			<h2 className='text-2xl font-semibold text-center text-slate-900 dark:text-slate-100'>
-				Sign in to your account
-			</h2>
-
-			<form onSubmit={handleSubmit} className='mt-6 space-y-4'>
-				<input
-					type='text'
-					placeholder='Email or username'
-					value={username}
-					onChange={e => setUsername(e.target.value)}
-					className='w-full rounded-lg border px-4 py-2 text-slate-700
-                     focus:outline-none focus:ring-2 focus:ring-emerald-500
-                     dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100'
+			<form onSubmit={handleLogin} className='space-y-5'>
+				<Input
+					label='Email Address'
+					type='email'
+					placeholder='name@company.com'
+					value={form.email}
+					onChange={e => setForm({ ...form, email: e.target.value })}
+					icon={<Mail className='w-5 h-5' />}
 					required
 				/>
 
-				<input
-					type='password'
-					placeholder='Password'
-					value={password}
-					onChange={e => setPassword(e.target.value)}
-					className='w-full rounded-lg border px-4 py-2 text-slate-700
-                     focus:outline-none focus:ring-2 focus:ring-emerald-500
-                     dark:bg-slate-800 dark:border-slate-700 dark:text-slate-700'
+				<Input
+					label='Password'
+					type={showPass ? 'text' : 'password'}
+					placeholder='••••••••'
+					value={form.password}
+					onChange={e => setForm({ ...form, password: e.target.value })}
+					icon={<Lock className='w-5 h-5' />}
 					required
+					rightElement={
+						<button
+							type='button'
+							onClick={() => setShowPass(!showPass)}
+							className='text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors focus:outline-none'
+							aria-label={showPass ? 'Hide password' : 'Show password'}
+							tabIndex={-1}
+						>
+							{showPass ? <EyeOff size={20} /> : <Eye size={20} />}
+						</button>
+					}
 				/>
 
-				{error && <p className='text-sm text-red-600 text-center'>{error}</p>}
+				{status.error && (
+					<div className='p-4 bg-red-50 border border-red-100 text-red-600 text-sm rounded-xl text-center font-medium dark:bg-red-900/20 dark:border-red-800 dark:text-red-400'>
+						{status.error}
+					</div>
+				)}
 
-				<button
-					type='submit'
-					disabled={loading}
-					className='w-full rounded-lg bg-emerald-600 py-2 text-white
-                     hover:bg-emerald-700 transition
-                     disabled:opacity-60'
-				>
-					{loading ? 'Signing in...' : 'Sign in'}
-				</button>
+				<Button type='submit' loading={status.loading} fullWidth>
+					Sign In
+				</Button>
+
+				<div className='text-center text-sm text-slate-600 dark:text-slate-400'>
+					Don&apos;t have an account?{' '}
+					<Link
+						href='/register'
+						className='text-blue-600 dark:text-blue-400 hover:underline font-medium'
+					>
+						Sign up
+					</Link>
+				</div>
 			</form>
-
-			<p className='mt-4 text-center text-sm text-slate-500'>Forgot password?</p>
-		</div>
+		</AuthLayout>
 	)
 }

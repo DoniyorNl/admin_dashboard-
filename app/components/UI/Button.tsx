@@ -1,91 +1,88 @@
-import { ButtonHTMLAttributes, ReactNode } from 'react'
-import clsx from 'clsx'
+'use client'
 
-type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
+import React, { forwardRef, ReactNode } from 'react'
+import clsx from 'clsx'
+import { Loader2 } from 'lucide-react' // Yaxshiroq spinner uchun
+
+type ButtonProps = React.ButtonHTMLAttributes<HTMLButtonElement> & {
 	variant?: 'primary' | 'secondary' | 'danger' | 'success' | 'ghost' | 'gradient' | 'outline'
-	children?: React.ReactNode
 	fullWidth?: boolean
 	size?: 'sm' | 'md' | 'lg' | 'icon'
 	loading?: boolean
 	icon?: ReactNode
 	iconPosition?: 'left' | 'right'
-	onClick?: () => void
 }
 
 const variantClasses = {
 	primary:
-		'bg-blue-600 text-white hover:bg-blue-700 active:bg-blue-800 shadow-lg shadow-blue-500/30 hover:shadow-blue-500/50',
-	secondary:
-		'bg-slate-100 text-slate-700 hover:bg-slate-200 active:bg-slate-300 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700',
-	danger:
-		'bg-red-600 text-white hover:bg-red-700 active:bg-red-800 shadow-lg shadow-red-500/30 hover:shadow-red-500/50',
+		'bg-blue-600 text-white hover:bg-blue-700 active:bg-blue-800 shadow-lg shadow-blue-500/30',
+	secondary: 'bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-200',
+	danger: 'bg-red-600 text-white hover:bg-red-700 active:bg-red-800 shadow-lg shadow-red-500/30',
 	success:
-		'bg-green-600 text-white hover:bg-green-700 active:bg-green-800 shadow-lg shadow-green-500/30 hover:shadow-green-500/50',
+		'bg-green-600 text-white hover:bg-green-700 active:bg-green-800 shadow-lg shadow-green-500/30',
 	ghost:
-		'bg-transparent text-slate-700 hover:bg-slate-100 active:bg-slate-200 dark:text-slate-200 dark:hover:bg-slate-800 dark:active:bg-slate-700',
+		'bg-transparent text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800',
 	gradient:
-		'bg-gradient-to-r from-blue-600 to-indigo-600 text-white hover:from-blue-700 hover:to-indigo-700 active:from-blue-800 active:to-indigo-800 shadow-lg shadow-blue-500/30 hover:shadow-blue-500/50',
+		'bg-gradient-to-r from-blue-600 to-indigo-600 text-white hover:opacity-90 shadow-lg shadow-blue-500/30',
 	outline:
-		'border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 active:bg-slate-100 dark:active:bg-slate-700',
+		'border-2 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800',
 }
 
 const sizeClasses = {
-	sm: 'px-3 py-1.5 text-sm',
-	md: 'px-4 py-2 text-base',
-	lg: 'px-5 py-3 text-lg',
-	icon: 'p-2',
+	sm: 'h-9 px-3 text-sm gap-1.5',
+	md: 'h-11 px-5 text-base gap-2',
+	lg: 'h-13 px-8 text-lg gap-2.5',
+	icon: 'h-11 w-11 p-0',
 }
 
-export default function Button({
-	variant = 'gradient',
-	size = 'md',
-	fullWidth = false,
-	className = '',
-	children,
-	loading = false,
-	disabled = false,
-	icon,
-	iconPosition = 'left',
-	...props
-}: ButtonProps) {
-	const baseClasses =
-		'inline-flex items-center justify-center gap-2 rounded-lg font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:focus:ring-blue-400 disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none'
+const Button = forwardRef<HTMLButtonElement, ButtonProps>(
+	(
+		{
+			variant = 'gradient',
+			size = 'md',
+			fullWidth = false,
+			className = '',
+			children,
+			loading = false,
+			disabled = false,
+			icon,
+			iconPosition = 'left',
+			...props
+		},
+		ref,
+	) => {
+		const baseClasses =
+			'relative inline-flex items-center justify-center rounded-xl font-bold transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-60 disabled:cursor-not-allowed active:scale-[0.97]'
 
-	const buttonClasses = clsx(
-		baseClasses,
-		variantClasses[variant],
-		sizeClasses[size],
-		fullWidth && 'w-full',
-		className,
-	)
+		const buttonClasses = clsx(
+			baseClasses,
+			variantClasses[variant],
+			sizeClasses[size],
+			fullWidth && 'w-full',
+			loading && 'text-transparent !pointer-events-none', // Loadingda matn ko'rinmaydi, lekin joyi saqlanadi
+			className,
+		)
 
-	return (
-		<button className={buttonClasses} disabled={disabled || loading} {...props}>
-			{loading && (
-				<svg
-					className='animate-spin h-4 w-4'
-					xmlns='http://www.w3.org/2000/svg'
-					fill='none'
-					viewBox='0 0 24 24'
-				>
-					<circle
-						className='opacity-25'
-						cx='12'
-						cy='12'
-						r='10'
-						stroke='currentColor'
-						strokeWidth='4'
-					></circle>
-					<path
-						className='opacity-75'
-						fill='currentColor'
-						d='M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z'
-					></path>
-				</svg>
-			)}
-			{!loading && icon && iconPosition === 'left' && icon}
-			{children}
-			{!loading && icon && iconPosition === 'right' && icon}
-		</button>
-	)
-}
+		return (
+			<button ref={ref} className={buttonClasses} disabled={disabled || loading} {...props}>
+				{/* Loading Spinner - Button markazida mutloq joylashgan */}
+				{loading && (
+					<div className='absolute inset-0 flex items-center justify-center text-current'>
+						<Loader2 className='h-5 w-5 animate-spin' />
+					</div>
+				)}
+
+				{/* Icon va Children */}
+				{!loading && icon && iconPosition === 'left' && <span className='shrink-0'>{icon}</span>}
+
+				<span className={clsx('truncate', loading && 'invisible')}>{children}</span>
+
+				{!loading && icon && iconPosition === 'right' && <span className='shrink-0'>{icon}</span>}
+			</button>
+		)
+	},
+)
+
+Button.displayName = 'Button'
+
+export default Button

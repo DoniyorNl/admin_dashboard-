@@ -1,11 +1,14 @@
 'use client'
 
-import { useState, useRef, useEffect } from 'react'
-import { User, Settings, LogOut, Bell, Search, Menu, Moon, Sun, ChevronDown } from 'lucide-react'
+import { getClientUser, logoutUser } from 'lib/auth/auth.client'
+import { Bell, ChevronDown, LogOut, Menu, Moon, Search, Settings, Sun, User } from 'lucide-react'
 import { useTheme } from 'next-themes'
+import { useEffect, useRef, useState } from 'react'
+
+import type { User as AuthUser } from 'lib/auth/types'
 
 export default function Header() {
-	const [username, setUsername] = useState<string | null>(null)
+	const [user, setUser] = useState<AuthUser | null>(null)
 	const [isDropdownOpen, setIsDropdownOpen] = useState(false)
 	const [hasNotifications, setHasNotifications] = useState(true)
 	const [isSearchOpen, setIsSearchOpen] = useState(false)
@@ -16,14 +19,18 @@ export default function Header() {
 
 	useEffect(() => setMounted(true), [])
 
-	// Cookie'dan username olish
+	// User ma'lumotini localStorage'dan olish
+	// Eslatma: auth cookie httpOnly bo'lgani uchun uni client JS o'qiy olmaydi.
 	useEffect(() => {
-		const name =
-			document.cookie
-				.split('; ')
-				.find(row => row.startsWith('username='))
-				?.split('=')[1] || null
-		setUsername(name)
+		setUser(getClientUser())
+
+		const onStorage = (e: StorageEvent) => {
+			if (e.key === 'user') {
+				setUser(getClientUser())
+			}
+		}
+		window.addEventListener('storage', onStorage)
+		return () => window.removeEventListener('storage', onStorage)
 	}, [])
 
 	// Dropdown yoki search tashqarisiga bosilganda yopish
@@ -37,20 +44,7 @@ export default function Header() {
 		return () => document.removeEventListener('mousedown', handleClickOutside)
 	}, [])
 
-	// Logout
-	const handleLogout = async () => {
-		setIsDropdownOpen(false)
-		try {
-			await fetch('/authAPI/logout', { method: 'POST' })
-			document.cookie = 'username=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;'
-			window.location.href = '/login'
-		} catch (error) {
-			console.error('Logout error:', error)
-			alert('Logout failed. Please try again.')
-		}
-	}
-
-	const getInitials = (name: string | null) => {
+	const getInitials = (name: string | null | undefined) => {
 		if (!name) return 'G'
 		return name
 			.split(' ')
@@ -137,11 +131,11 @@ export default function Header() {
 						className='flex items-center gap-2 sm:gap-3 rounded-lg px-2 py-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all duration-200 group'
 					>
 						<span className='hidden sm:block text-sm font-medium text-slate-700 dark:text-slate-200'>
-							{username || 'Guest'}
+							{user?.name || 'Guest'}
 						</span>
 
 						<div className='w-9 h-9 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white text-sm font-semibold shadow-lg shadow-blue-500/20 ring-2 ring-white dark:ring-slate-900 transition-transform group-hover:scale-105'>
-							{getInitials(username)}
+							{getInitials(user?.name)}
 						</div>
 
 						<ChevronDown
@@ -157,16 +151,14 @@ export default function Header() {
 							<div className='px-4 py-3 border-b border-slate-200 dark:border-slate-800'>
 								<div className='flex items-center gap-3'>
 									<div className='w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white text-sm font-semibold'>
-										{getInitials(username)}
+										{getInitials(user?.name)}
 									</div>
 									<div className='flex-1 min-w-0'>
 										<p className='text-sm font-semibold text-slate-800 dark:text-slate-100 truncate'>
-											{username || 'Guest'}
+											{user?.name || 'Guest'}
 										</p>
 										<p className='text-xs text-slate-500 dark:text-slate-400 truncate'>
-											{username
-												? `${username.toLowerCase().replace(/\s+/g, '.')}@company.com`
-												: 'guest@company.com'}
+											{user?.email || 'guest@company.com'}
 										</p>
 									</div>
 								</div>
@@ -201,7 +193,7 @@ export default function Header() {
 							{/* Logout */}
 							<div className='py-2'>
 								<button
-									onClick={handleLogout}
+									onClick={logoutUser}
 									className='w-full flex items-center gap-3 px-4 py-2.5 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors group'
 								>
 									<LogOut className='w-4 h-4' />

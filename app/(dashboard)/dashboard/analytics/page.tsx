@@ -1,15 +1,14 @@
 'use client'
 
-import { DollarSign, Users, BarChart2, TrendingUp, AlertCircle } from 'lucide-react'
+import { AlertCircle, BarChart2, DollarSign, TrendingUp, Users } from 'lucide-react'
 import { useAnalytics } from './hooks/useAnalytics'
-import type { AnalyticsRange } from './hooks/useAnalytics'
 
-import KpiCard from '@/components/features/analytics/KpiCard'
-import RevenueChart from '@/components/features/analytics/RevenueChart'
 import ChannelCard from '@/components/features/analytics/ChannelCard'
-import KpiCardSkeleton from '@/components/features/analytics/KpiCardSkeleton'
-import RevenueChartSkeleton from '@/components/features/analytics/RevenueChartSkeleton'
 import ChannelCardSkeleton from '@/components/features/analytics/ChannelCardSkeleton'
+import KpiCard from '@/components/features/analytics/KpiCard'
+import KpiCardSkeleton from '@/components/features/analytics/KpiCardSkeleton'
+import RevenueChart from '@/components/features/analytics/RevenueChart'
+import RevenueChartSkeleton from '@/components/features/analytics/RevenueChartSkeleton'
 
 // KPI configuration - maintainable and type-safe
 const KPI_CONFIG = {
@@ -130,7 +129,7 @@ export default function AnalyticsPage() {
 				<div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4'>
 					{Object.entries(kpis).map(([key, metric]) => {
 						const config = KPI_CONFIG[key as keyof typeof KPI_CONFIG]
-						
+
 						// Skip if no config (defensive programming)
 						if (!config) return null
 
@@ -180,14 +179,15 @@ export default function AnalyticsPage() {
 						</h2>
 						<ul className='space-y-2'>
 							{recentOrders.map(order => (
-								<li key={order.id} className='flex items-center justify-between text-sm p-2 hover:bg-slate-50 dark:hover:bg-slate-700/50 rounded transition-colors'>
+								<li
+									key={order.id}
+									className='flex items-center justify-between text-sm p-2 hover:bg-slate-50 dark:hover:bg-slate-700/50 rounded transition-colors'
+								>
 									<div>
 										<p className='font-medium text-slate-800 dark:text-slate-100'>
 											Order #{order.id}
 										</p>
-										<p className='text-slate-500 dark:text-slate-400'>
-											${order.amount.toFixed(2)}
-										</p>
+										<p className='text-slate-500 dark:text-slate-400'>${order.amount.toFixed(2)}</p>
 									</div>
 									<span className='text-xs text-slate-500 dark:text-slate-400'>
 										{order.createdAt}
