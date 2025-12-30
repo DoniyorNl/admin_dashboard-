@@ -1,6 +1,8 @@
 import crypto from 'crypto'
 import { AUTH_API_BASE_URL } from 'lib/api/config'
 import { setAuthCookie } from 'lib/auth/auth'
+import { decrypt } from 'lib/security/encryption'
+import { checkRateLimit, RATE_LIMITS, resetRateLimit } from 'lib/security/rateLimit'
 import { NextResponse } from 'next/server'
 
 export const runtime = 'nodejs'
@@ -54,6 +56,15 @@ function verifyTotp(base32Secret: string, token: string, window = 1) {
 	return false
 }
 
+/**
+ * POST /authAPI/2fa/verify
+ *
+ * PRODUCTION-READY VERSION:
+ * - Rate limiting (5 attempts per 15 min, then 30 min block)
+ * - Decrypts secret from database
+ * - Enables 2FA after successful verification
+ * - Resets rate limit on success
+ */
 export async function POST(request: Request) {
 	try {
 		const { userId, code } = await request.json()
@@ -62,6 +73,24 @@ export async function POST(request: Request) {
 			return NextResponse.json({ error: 'User ID and code are required' }, { status: 400 })
 		}
 
+		// 1. Rate limiting (prevent brute force)
+		const rateLimitKey = `2fa-verify:${userId}`
+		const rateLimit = checkRateLimit(rateLimitKey, RATE_LIMITS.TFA_VERIFY)
+
+		if (!rateLimit.allowed) {
+			console.warn(`[2FA Verify] Rate limit exceeded for user ${userId}`)
+			return NextResponse.json(
+				{
+					error: `Too many failed attempts. Try again in ${Math.ceil(
+						(rateLimit.retryAfter || 0) / 60,
+					)} minutes`,
+					retryAfter: rateLimit.retryAfter,
+				},
+				{ status: 429 },
+			)
+		}
+
+		// 2. Get user from database
 		const userRes = await fetch(`${AUTH_API_BASE_URL}/users/${userId}`, { cache: 'no-store' })
 		if (!userRes.ok) {
 			return NextResponse.json({ error: 'User not found' }, { status: 404 })
@@ -69,23 +98,56 @@ export async function POST(request: Request) {
 
 		const user = await userRes.json()
 
-		if (!user.twoFactorEnabled || !user.twoFactorSecret) {
-			return NextResponse.json({ error: 'Two-factor auth not enabled' }, { status: 400 })
+		if (!user.twoFactorSecret) {
+			return NextResponse.json({ error: 'Two-factor auth not set up' }, { status: 400 })
 		}
 
-		const ok = verifyTotp(user.twoFactorSecret, String(code), 1)
-		if (!ok) {
-			return NextResponse.json({ error: 'Invalid verification code' }, { status: 401 })
+		// 3. Decrypt secret
+		let decryptedSecret: string
+		try {
+			decryptedSecret = decrypt(user.twoFactorSecret)
+		} catch (error) {
+			console.error('[2FA Verify] Decryption failed:', error)
+			return NextResponse.json({ error: 'Failed to verify code' }, { status: 500 })
 		}
 
+		// 4. Verify TOTP code
+		const isValid = verifyTotp(decryptedSecret, String(code), 1)
+
+		if (!isValid) {
+			console.warn(`[2FA Verify] Invalid code attempt for user ${userId}`)
+			return NextResponse.json(
+				{
+					error: 'Invalid verification code',
+					remaining: rateLimit.remaining,
+				},
+				{ status: 401 },
+			)
+		}
+
+		// 5. Success: Enable 2FA if not already enabled
+		if (!user.twoFactorEnabled) {
+			await fetch(`${AUTH_API_BASE_URL}/users/${userId}`, {
+				method: 'PATCH',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ twoFactorEnabled: true }),
+			})
+		}
+
+		// 6. Reset rate limits (successful verification)
+		resetRateLimit(rateLimitKey)
+
+		// 7. Set auth cookie
 		await setAuthCookie(String(user.id))
+
+		console.log(`[2FA Verify] Success for user ${userId}`)
 
 		return NextResponse.json({
 			success: true,
 			user: { id: user.id, email: user.email, name: user.name, role: user.role },
 		})
 	} catch (error) {
-		console.error('2FA verification error:', error)
+		console.error('[2FA Verify] Error:', error)
 		return NextResponse.json({ error: 'An error occurred during verification' }, { status: 500 })
 	}
 }

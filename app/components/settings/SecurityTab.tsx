@@ -23,6 +23,8 @@ export default function SecurityTab({
 	const [qrCode, setQrCode] = useState('')
 	const [secret, setSecret] = useState('')
 	const [verificationCode, setVerificationCode] = useState('')
+	const [verifyError, setVerifyError] = useState('')
+	const [verifyLoading, setVerifyLoading] = useState(false)
 
 	const handle2FAToggle = async () => {
 		if (security.twoFactorEnabled) {
@@ -38,26 +40,50 @@ export default function SecurityTab({
 				setQrCode(result.qrCode)
 				setSecret(result.secret)
 				setShow2FAModal(true)
+				setVerifyError('')
 			}
 		}
 	}
 
 	const verify2FACode = async () => {
-		// Backend'ga verification code yuborish
+		setVerifyLoading(true)
+		setVerifyError('')
+
 		try {
+			// Get userId from localStorage or auth context
+			const userStr = localStorage.getItem('user')
+			const user = userStr ? JSON.parse(userStr) : null
+
+			if (!user?.id) {
+				setVerifyError('User authentication required')
+				setVerifyLoading(false)
+				return
+			}
+
 			const response = await fetch('/authAPI/2fa/verify', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ code: verificationCode, secret }),
+				body: JSON.stringify({
+					userId: user.id,
+					code: verificationCode,
+				}),
 			})
 
-			if (response.ok) {
+			const data = await response.json()
+
+			if (response.ok && data.success) {
 				setSecurity({ ...security, twoFactorEnabled: true })
 				setShow2FAModal(false)
 				setVerificationCode('')
+				setVerifyError('')
+			} else {
+				setVerifyError(data.error || 'Invalid verification code')
 			}
 		} catch (error) {
 			console.error('2FA verification failed:', error)
+			setVerifyError('Failed to verify code. Please try again.')
+		} finally {
+			setVerifyLoading(false)
 		}
 	}
 
@@ -222,11 +248,18 @@ export default function SecurityTab({
 								<input
 									type='text'
 									value={verificationCode}
-									onChange={e => setVerificationCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+									onChange={e => {
+										setVerificationCode(e.target.value.replace(/\D/g, '').slice(0, 6))
+										setVerifyError('')
+									}}
 									className='w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white text-center text-2xl tracking-widest font-mono focus:ring-2 focus:ring-blue-500 focus:border-transparent'
 									placeholder='000000'
 									maxLength={6}
+									disabled={verifyLoading}
 								/>
+								{verifyError && (
+									<p className='text-sm text-red-600 dark:text-red-400 mt-2'>{verifyError}</p>
+								)}
 							</div>
 
 							{/* Actions */}
@@ -235,17 +268,19 @@ export default function SecurityTab({
 									onClick={() => {
 										setShow2FAModal(false)
 										setVerificationCode('')
+										setVerifyError('')
 									}}
-									className='flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors'
+									disabled={verifyLoading}
+									className='flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed'
 								>
 									Cancel
 								</button>
 								<button
 									onClick={verify2FACode}
-									disabled={verificationCode.length !== 6}
+									disabled={verificationCode.length !== 6 || verifyLoading}
 									className='flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors'
 								>
-									Verify & Enable
+									{verifyLoading ? 'Verifying...' : 'Verify & Enable'}
 								</button>
 							</div>
 						</div>

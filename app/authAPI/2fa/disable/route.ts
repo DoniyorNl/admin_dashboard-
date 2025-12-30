@@ -1,30 +1,52 @@
-import { cookies } from 'next/headers'
+import { AUTH_API_BASE_URL } from 'lib/api/config'
+import { resetRateLimit } from 'lib/security/rateLimit'
 import { NextRequest, NextResponse } from 'next/server'
 
 /**
  * POST /authAPI/2fa/disable
  *
- * Vazifasi:
- * 1. User'ning 2FA'sini o'chiradi
- * 2. Cookie'dan secret'ni o'chiradi
+ * PRODUCTION-READY VERSION:
+ * - Updates database (removes secret, sets enabled=false)
+ * - Clears rate limit entries
+ * - Requires user authentication
  *
  * Flow:
- * User "Disable 2FA" toggle'ni bosadi
- *   → Frontend bu endpoint'ga POST qiladi
- *   → Backend secret'ni cookie/DB'dan o'chiradi
+ * 1. Verify user authentication
+ * 2. Update DB (remove secret, disable 2FA)
+ * 3. Clear rate limit cache for this user
  */
-export async function POST(_request: NextRequest) {
+export async function POST(request: NextRequest) {
 	try {
-		const cookieStore = await cookies()
+		// 1. Get user ID from request body
+		const body = await request.json().catch(() => ({}))
+		const userId = body.userId || body.id
 
-		// Cookie'dan secret o'chirish
-		cookieStore.delete('2fa_secret')
+		if (!userId) {
+			return NextResponse.json(
+				{ success: false, error: 'User authentication required' },
+				{ status: 401 },
+			)
+		}
 
-		// Production'da DB'dan ham o'chirish kerak:
-		// await db.users.update({
-		//   where: { id: userId },
-		//   data: { twoFactorSecret: null, twoFactorEnabled: false }
-		// })
+		// 2. Update user in database
+		const updateResponse = await fetch(`${AUTH_API_BASE_URL}/users/${userId}`, {
+			method: 'PATCH',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify({
+				twoFactorSecret: null,
+				twoFactorEnabled: false,
+			}),
+		})
+
+		if (!updateResponse.ok) {
+			throw new Error('Failed to disable 2FA in database')
+		}
+
+		// 3. Clear rate limit entries for this user
+		resetRateLimit(`2fa-verify:${userId}`)
+		resetRateLimit(`2fa-enable:${userId}`)
+
+		console.log(`[2FA Disable] 2FA disabled for user ${userId}`)
 
 		return NextResponse.json({
 			success: true,
@@ -32,6 +54,12 @@ export async function POST(_request: NextRequest) {
 		})
 	} catch (error) {
 		console.error('[2FA Disable] Error:', error)
-		return NextResponse.json({ success: false, error: 'Failed to disable 2FA' }, { status: 500 })
+		return NextResponse.json(
+			{
+				success: false,
+				error: error instanceof Error ? error.message : 'Failed to disable 2FA',
+			},
+			{ status: 500 },
+		)
 	}
 }

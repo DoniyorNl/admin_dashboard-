@@ -1,5 +1,5 @@
 // hooks/useSettings.ts
-import { useEffect, useState, useCallback } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { settingsApi } from '../../services/settings/settingsapi'
 
 type Maybe<T> = T | null
@@ -288,19 +288,56 @@ export const useSettings = () => {
 
 	// ✅ Security: Toggle 2FA
 	const toggle2FA = useCallback(
-		async (enabled: boolean): Promise<{ success: boolean; qrCode?: string; error?: string }> => {
+		async (
+			enabled: boolean,
+		): Promise<{ success: boolean; qrCode?: string; secret?: string; error?: string }> => {
 			try {
 				setSaving(true)
 				setError(null)
 
-				let result: { success: boolean; qrCode?: string }
+				// Get user from localStorage
+				const userStr = localStorage.getItem('user')
+				const user = userStr ? JSON.parse(userStr) : null
+
+				if (!user?.id) {
+					throw new Error('User authentication required')
+				}
+
+				let result: { success: boolean; qrCode?: string; secret?: string }
 
 				if (enabled) {
-					// Enable 2FA
-					result = await settingsApi.security.enable2FA()
+					// Enable 2FA - call real backend endpoint
+					const response = await fetch('/authAPI/2fa/enable', {
+						method: 'POST',
+						headers: { 'Content-Type': 'application/json' },
+						body: JSON.stringify({
+							userId: user.id,
+							email: user.email,
+						}),
+					})
+
+					const data = await response.json()
+
+					if (!response.ok) {
+						throw new Error(data.error || 'Failed to enable 2FA')
+					}
+
+					result = data
 				} else {
-					// Disable 2FA
-					result = await settingsApi.security.disable2FA()
+					// Disable 2FA - call real backend endpoint
+					const response = await fetch('/authAPI/2fa/disable', {
+						method: 'POST',
+						headers: { 'Content-Type': 'application/json' },
+						body: JSON.stringify({ userId: user.id }),
+					})
+
+					const data = await response.json()
+
+					if (!response.ok) {
+						throw new Error(data.error || 'Failed to disable 2FA')
+					}
+
+					result = data
 				}
 
 				if (result.success) {
@@ -311,7 +348,11 @@ export const useSettings = () => {
 					}))
 
 					showSuccess()
-					return { success: true, qrCode: result.qrCode }
+					return {
+						success: true,
+						qrCode: result.qrCode,
+						secret: result.secret,
+					}
 				} else {
 					throw new Error('Failed to toggle 2FA')
 				}
