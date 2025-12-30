@@ -1,7 +1,7 @@
 'use client'
 
 import { Eye, EyeOff, Lock, Smartphone } from 'lucide-react'
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 
 interface SecurityTabProps {
 	security: any
@@ -25,6 +25,18 @@ export default function SecurityTab({
 	const [verificationCode, setVerificationCode] = useState('')
 	const [verifyError, setVerifyError] = useState('')
 	const [verifyLoading, setVerifyLoading] = useState(false)
+
+	// Password validation state
+	const passwordValidation = useMemo(() => {
+		const newPass = security.newPassword || ''
+		const confirmPass = security.confirmPassword || ''
+
+		return {
+			length: newPass.length >= 8,
+			match: newPass && confirmPass && newPass === confirmPass,
+			showMatch: confirmPass.length > 0,
+		}
+	}, [security.newPassword, security.confirmPassword])
 
 	const handle2FAToggle = async () => {
 		if (security.twoFactorEnabled) {
@@ -142,6 +154,19 @@ export default function SecurityTab({
 								{showNewPassword ? <EyeOff size={18} /> : <Eye size={18} />}
 							</button>
 						</div>
+						{security.newPassword && (
+							<p
+								className={`text-sm mt-1 ${
+									passwordValidation.length
+										? 'text-green-600 dark:text-green-400'
+										: 'text-red-600 dark:text-red-400'
+								}`}
+							>
+								{passwordValidation.length
+									? '✓ Password length is valid'
+									: '✗ Password must be at least 8 characters'}
+							</p>
+						)}
 					</div>
 
 					{/* Confirm Password */}
@@ -166,6 +191,17 @@ export default function SecurityTab({
 								{showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
 							</button>
 						</div>
+						{passwordValidation.showMatch && (
+							<p
+								className={`text-sm mt-1 ${
+									passwordValidation.match
+										? 'text-green-600 dark:text-green-400'
+										: 'text-red-600 dark:text-red-400'
+								}`}
+							>
+								{passwordValidation.match ? '✓ Passwords match' : '✗ Passwords do not match'}
+							</p>
+						)}
 					</div>
 				</div>
 			</div>

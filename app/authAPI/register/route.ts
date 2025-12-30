@@ -1,5 +1,6 @@
 import { AUTH_API_BASE_URL } from 'lib/api/config'
 import { setAuthCookie } from 'lib/auth/auth'
+import { validateEmailComprehensive } from 'lib/email/validator'
 import { NextResponse } from 'next/server'
 
 export async function POST(request: Request) {
@@ -9,6 +10,31 @@ export async function POST(request: Request) {
 		if (!email || !password || !name) {
 			return NextResponse.json({ error: 'Email, password, and name are required' }, { status: 400 })
 		}
+
+		// Email validation (MX + API) - Real email tekshiruvi
+		console.log('🔍 Validating email for registration:', email)
+
+		let emailValidation
+		try {
+			emailValidation = await validateEmailComprehensive(email)
+			console.log('📊 Validation result:', emailValidation)
+		} catch (validationError) {
+			console.error('💥 VALIDATION ERROR:', validationError)
+			return NextResponse.json(
+				{ error: 'Email validation service error. Please try again.' },
+				{ status: 500 },
+			)
+		}
+
+		if (!emailValidation.isValid) {
+			console.log('❌ Email validation failed:', emailValidation.reason)
+			return NextResponse.json(
+				{ error: `Invalid email: ${emailValidation.reason}` },
+				{ status: 400 },
+			)
+		}
+
+		console.log('✅ Email validation passed:', email)
 
 		const checkResponse = await fetch(
 			`${AUTH_API_BASE_URL}/users?email=${encodeURIComponent(email)}`,

@@ -291,8 +291,6 @@ export const settingsApi = {
 		 * Change password
 		 */
 		changePassword: async (data: PasswordChangeData): Promise<{ success: boolean }> => {
-			await delay(500)
-
 			// Validate inputs
 			if (!data.currentPassword || !data.newPassword) {
 				throw new Error('Current password and new password are required')
@@ -302,9 +300,37 @@ export const settingsApi = {
 				throw new Error('New password must be at least 8 characters')
 			}
 
-			// In demo mode, we simulate success
-			// In production, this would make an API call
-			console.log('Password change simulated (demo mode)')
+			// Get user from localStorage
+			const userStr = localStorage.getItem('user')
+			const user = userStr ? JSON.parse(userStr) : null
+
+			if (!user?.id) {
+				throw new Error('User authentication required')
+			}
+
+			// Call real backend API
+			const response = await fetch('/authAPI/change-password', {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json',
+				},
+				body: JSON.stringify({
+					userId: user.id,
+					currentPassword: data.currentPassword,
+					newPassword: data.newPassword,
+				}),
+			})
+
+			const result = await response.json()
+
+			if (!response.ok) {
+				throw new Error(result.error || 'Failed to change password')
+			}
+
+			// Update localStorage user if returned
+			if (result.user) {
+				localStorage.setItem('user', JSON.stringify(result.user))
+			}
 
 			return { success: true }
 		},

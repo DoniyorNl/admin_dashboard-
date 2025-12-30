@@ -7,7 +7,7 @@ import SecurityTab from '@/components/settings/SecurityTab'
 import Button from '@/components/UI/Button'
 import { useSettings } from '@/hooks/useSettings'
 import { AlertCircle, Bell, CheckCircle, Palette, Save, Shield, User, X } from 'lucide-react'
-import { useState, useCallback } from 'react'
+import { useCallback, useState } from 'react'
 
 export default function Settings() {
 	const [activeTab, setActiveTab] = useState('profile')
@@ -50,8 +50,25 @@ export default function Settings() {
 
 	// ✅ Security uchun save handler (faqat password change)
 	const handleChangePassword = useCallback(async () => {
-		if (!settings.security.currentPassword || !settings.security.newPassword) {
+		// Validate all fields are filled
+		if (
+			!settings.security.currentPassword ||
+			!settings.security.newPassword ||
+			!settings.security.confirmPassword
+		) {
 			settings.setError?.('Please fill in all password fields')
+			return
+		}
+
+		// Validate passwords match
+		if (settings.security.newPassword !== settings.security.confirmPassword) {
+			settings.setError?.('New passwords do not match')
+			return
+		}
+
+		// Validate password length
+		if (settings.security.newPassword.length < 8) {
+			settings.setError?.('New password must be at least 8 characters')
 			return
 		}
 
@@ -213,7 +230,9 @@ export default function Settings() {
 									saving={settings.saving}
 								/>
 								{/* Faqat password fields to'ldirilgan bo'lsa Save button ko'rsatish */}
-								{settings.security.currentPassword && settings.security.newPassword && (
+								{(settings.security.currentPassword ||
+									settings.security.newPassword ||
+									settings.security.confirmPassword) && (
 									<div className='flex justify-end gap-3 mt-8 pt-6 border-t border-gray-200 dark:border-gray-700'>
 										<Button variant='outline' onClick={handleCancel} disabled={settings.saving}>
 											Cancel
