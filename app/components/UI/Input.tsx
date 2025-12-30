@@ -33,13 +33,15 @@ export default function Input({
 				<input
 					{...props}
 					className={clsx(
-						'w-full py-2 border rounded-lg text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 placeholder-slate-400 dark:placeholder-slate-500 transition-all',
+						'w-full py-2 border rounded-lg text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 dark:placeholder-slate-400 transition-all',
 						icon ? 'pl-10' : 'pl-4',
 						rightElement ? 'pr-10' : 'pr-4',
 						error
 							? 'border-red-500 focus:ring-red-500'
 							: 'border-slate-200 dark:border-slate-700 focus:ring-blue-500 dark:focus:ring-blue-400',
 						'bg-white dark:bg-slate-800',
+						'autofill:shadow-[inset_0_0_0_1000px_#ffffff] autofill:text-slate-800',
+						'dark:autofill:shadow-[inset_0_0_0_1000px_#1e293b] dark:autofill:text-slate-100',
 						className,
 					)}
 				/>
