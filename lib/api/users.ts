@@ -2,9 +2,7 @@
 import { User } from '@/types/users'
 import { EXTERNAL_APIS, apiFetchLegacy } from './config'
 
-// ============================================================================
 // Private: Environment check
-// ============================================================================
 /**
  * Remote API ishlatish kerakligini tekshiradi.
  * Users uchun JSONPlaceholder ishlatamiz (external API).
@@ -48,9 +46,7 @@ function getMockUsers(): User[] {
 	] as User[]
 }
 
-// ============================================================================
 // Public API: Environment-aware users adapter
-// ============================================================================
 export const usersApi = {
 	// Get paginated users - remote (JSONPlaceholder) yoki local mock
 	getAll: async (page: number = 1, limit: number = 5): Promise<User[]> => {

@@ -5,15 +5,15 @@ import path from 'path'
 import { API_BASE_URL, apiFetch } from './config'
 
 // ============================================================================
-// Private: local fallback - backend/product.db.json dan o'qish
+// Private: local fallback - backend/db.json dan o'qish
 // ============================================================================
 /**
- * Local JSON fayl (backend/product.db.json) dan productlarni o'qiydi.
+ * Local JSON fayl (backend/db.json) dan productlarni o'qiydi.
  * Bu funksiya faqat server-side ishlatiladi.
  */
 function getProductsFromLocalFile(): Product[] {
 	try {
-		const filePath = path.join(process.cwd(), 'backend', 'product.db.json')
+		const filePath = path.join(process.cwd(), 'backend', 'db.json')
 		const raw = fs.readFileSync(filePath, 'utf-8')
 		const db = JSON.parse(raw)
 		return db.products || []

@@ -6,7 +6,7 @@ This repo is a Next.js (App Router) admin dashboard with a small local JSON back
 - **Client components:** files starting with `'use client'` indicate client-only behavior (e.g., [app/(auth)/login/page.tsx](app/(auth)/login/page.tsx) and [app/(dashboard)/dashboard/products/ProductsPageClient.tsx](app/(dashboard)/dashboard/products/ProductsPageClient.tsx).
 
 - **API layer:** reusable API helpers are in `lib/api/*`. Use `API_BASE_URL` from [lib/api/config.ts](lib/api/config.ts) and the `apiFetch` wrapper for network calls. Prefer `lib/api/*` functions for network access rather than ad-hoc fetches.
-- **Local mock backend:** data is in [backend/product.db.json](backend/product.db.json). Start it with `npm run json` (see `package.json`). The UI expects this at `http://localhost:4000` by default; `NEXT_PUBLIC_API_URL` can override it.
+- **Local mock backend:** data is in [backend/db.json](backend/db.json). Start it with `npm run json` (see `package.json`). The UI expects this at `http://localhost:4000` by default; `NEXT_PUBLIC_API_URL` can override it.
 
 - **Auth pattern:** server routes under `app/authAPI/*` set cookies (e.g., [app/authAPI/login/route.ts](app/authAPI/login/route.ts)). The UI also checks `localStorage` in `app/components/auth/Protected.tsx`. Note: there is an observable mismatch between cookie-based server responses and client-side `localStorage` use—keep changes consistent with `Protected` or update both sides.
 
@@ -23,7 +23,7 @@ npm run dev     # starts Next.js app on :3000
 
 - **Where to change things:**
   - API helpers: [lib/api/config.ts](lib/api/config.ts) and [lib/api/products.ts](lib/api/products.ts)
-  - Mock data: [backend/product.db.json](backend/product.db.json)
+  - Mock data: [backend/db.json](backend/db.json)
   - Auth endpoints: [app/authAPI/*](app/authAPI/)
   - Protected layout: [app/components/auth/Protected.tsx](app/components/auth/Protected.tsx)
   - UI patterns: [app/components/UI/](app/components/UI/)

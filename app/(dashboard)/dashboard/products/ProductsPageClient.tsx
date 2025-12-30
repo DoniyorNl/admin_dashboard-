@@ -169,8 +169,7 @@ export default function ProductsPageClient({ initialProducts }: Props) {
 							<option value='draft'>Draft</option>
 							<option value='out_of_stock'>Out of Stock</option>
 						</select>
-						<Button>
-							<Download className='w-4 h-4' />
+						<Button icon={<Download className='w-4 h-4' />}>
 							<span className='hidden sm:inline'>Export</span>
 						</Button>
 					</div>

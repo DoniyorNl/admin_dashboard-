@@ -1,3 +1,4 @@
+// settings/ProfileTab.tsx
 import { Camera } from 'lucide-react'
 import React, { useRef, useState } from 'react'
 import {
@@ -26,6 +27,7 @@ interface ProfileTabProps {
 		file: File,
 		onProgress: (progress: number) => void,
 	) => Promise<{ success: boolean; error?: string }>
+	onSave: () => Promise<void> // ✅ Yangi prop
 	saving: boolean
 }
 
@@ -36,7 +38,13 @@ interface ProfileErrors {
 	phone?: string
 }
 
-export default function ProfileTab({ profile, setProfile, uploadAvatar, saving }: ProfileTabProps) {
+export default function ProfileTab({
+	profile,
+	setProfile,
+	uploadAvatar,
+	onSave,
+	saving,
+}: ProfileTabProps) {
 	const [errors, setErrors] = useState<ProfileErrors>({})
 	const [uploadProgress, setUploadProgress] = useState(0)
 	const [uploading, setUploading] = useState(false)
@@ -51,7 +59,8 @@ export default function ProfileTab({ profile, setProfile, uploadAvatar, saving }
 		}
 	}
 
-	const validateForm = () => {
+	// ✅ Validatsiya funksiyasi - endi ishlatiladi!
+	const validateForm = (): boolean => {
 		const newErrors: ProfileErrors = {}
 
 		newErrors.firstName = validateRequired(profile.firstName, 'First name')
@@ -59,8 +68,31 @@ export default function ProfileTab({ profile, setProfile, uploadAvatar, saving }
 		newErrors.email = validateEmail(profile.email)
 		newErrors.phone = validatePhone(profile.phone)
 
-		setErrors(newErrors)
-		return !Object.values(newErrors).some(error => error !== '')
+		// Faqat xatolar mavjud bo'lsa setErrors chaqirish
+		const hasErrors = Object.values(newErrors).some(error => error !== '')
+
+		if (hasErrors) {
+			setErrors(newErrors)
+		}
+
+		return !hasErrors
+	}
+
+	// ✅ Submit handler - validatsiya bilan
+	const handleSubmit = async () => {
+		// Validatsiya qilish
+		if (!validateForm()) {
+			// Scroll to first error (optional)
+			const firstErrorField = Object.keys(errors)[0]
+			if (firstErrorField) {
+				const element = document.querySelector(`[name="${firstErrorField}"]`)
+				element?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+			}
+			return
+		}
+
+		// Parent funksiyasini chaqirish
+		await onSave()
 	}
 
 	const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -72,24 +104,31 @@ export default function ProfileTab({ profile, setProfile, uploadAvatar, saving }
 		const typeError = validateFileType(file, ['image/jpeg', 'image/png', 'image/gif'])
 
 		if (sizeError || typeError) {
-			alert(sizeError || typeError)
+			// ✅ alert o'rniga better error handling
+			const errorMessage = sizeError || typeError
+			console.error('File validation error:', errorMessage)
+			// Toast notification ko'rsatish uchun parent ga yuborish mumkin
+			alert(errorMessage)
 			return
 		}
 
 		setUploading(true)
 		setUploadProgress(0)
 
-		const result = await uploadAvatar(file, progress => {
-			setUploadProgress(progress)
-		})
+		try {
+			const result = await uploadAvatar(file, progress => {
+				setUploadProgress(progress)
+			})
 
-		setUploading(false)
-		setUploadProgress(0)
-
-		if (result.success) {
-			// Avatar updated successfully
-		} else {
-			alert(result.error)
+			if (!result.success) {
+				alert(result.error || 'Failed to upload avatar')
+			}
+		} catch (error) {
+			console.error('Avatar upload error:', error)
+			alert('An unexpected error occurred while uploading')
+		} finally {
+			setUploading(false)
+			setUploadProgress(0)
 		}
 	}
 
@@ -129,12 +168,14 @@ export default function ProfileTab({ profile, setProfile, uploadAvatar, saving }
 							accept='image/jpeg,image/png,image/gif'
 							onChange={handleFileSelect}
 							className='hidden'
+							aria-label='Upload avatar'
 						/>
 						<Button
 							variant='secondary'
 							size='sm'
 							onClick={() => fileInputRef.current?.click()}
 							loading={uploading}
+							disabled={uploading || saving}
 							icon={<Camera size={18} />}
 						>
 							Change Photo
@@ -148,36 +189,48 @@ export default function ProfileTab({ profile, setProfile, uploadAvatar, saving }
 				<div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
 					<Input
 						label='First Name'
+						name='firstName'
 						value={profile.firstName}
 						onChange={e => handleChange('firstName', e.target.value)}
 						error={errors.firstName}
 						placeholder='Enter first name'
+						disabled={saving}
+						required
 					/>
 
 					<Input
 						label='Last Name'
+						name='lastName'
 						value={profile.lastName}
 						onChange={e => handleChange('lastName', e.target.value)}
 						error={errors.lastName}
 						placeholder='Enter last name'
+						disabled={saving}
+						required
 					/>
 
 					<Input
 						label='Email'
+						name='email'
 						type='email'
 						value={profile.email}
 						onChange={e => handleChange('email', e.target.value)}
 						error={errors.email}
 						placeholder='Enter email'
+						disabled={saving}
+						required
 					/>
 
 					<Input
 						label='Phone'
+						name='phone'
 						type='tel'
 						value={profile.phone}
 						onChange={e => handleChange('phone', e.target.value)}
 						error={errors.phone}
 						placeholder='+1 234 567 8900'
+						disabled={saving}
+						required
 					/>
 
 					<div className='flex flex-col'>
@@ -199,9 +252,22 @@ export default function ProfileTab({ profile, setProfile, uploadAvatar, saving }
 						onChange={e => handleChange('bio', e.target.value)}
 						rows={3}
 						placeholder='Tell us about yourself'
-						className='w-full px-4 py-2 border border-slate-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 placeholder-slate-400 dark:placeholder-slate-500 transition-all'
+						disabled={saving}
+						className='w-full px-4 py-2 border border-slate-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 placeholder-slate-400 dark:placeholder-slate-500 transition-all disabled:opacity-50 disabled:cursor-not-allowed'
 					/>
 				</div>
+			</div>
+
+			{/* ✅ Save Button - ProfileTab ichida */}
+			<div className='flex justify-end gap-3 pt-6 border-t border-gray-200 dark:border-gray-700'>
+				<Button
+					variant='primary'
+					onClick={handleSubmit}
+					loading={saving}
+					disabled={saving || uploading}
+				>
+					Save Changes
+				</Button>
 			</div>
 		</div>
 	)

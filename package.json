@@ -3,14 +3,12 @@
 	"version": "0.1.0",
 	"private": true,
 	"scripts": {
-		"dev": "next dev --webpack",
-		"json:main": "json-server --watch backend/product.db.json --port 4000",
-		"json:auth": "json-server --watch backend/users.db.json --port 4001",
-		"json": "concurrently \"npm:json:main\" \"npm:json:auth\"",
+		"dev": "next dev",
+		"json": "json-server --watch backend/db.json --port 4000",
 		"dev:all": "concurrently \"npm:json\" \"npm:dev\"",
 		"build": "next build",
 		"start": "next start",
-		"lint": "eslint"
+		"lint": "next lint"
 	},
 	"dependencies": {
 		"@tailwindcss/vite": "^4.1.18",

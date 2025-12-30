@@ -38,7 +38,7 @@ export interface AnalyticsData {
  * fs bilan backend/analytics.db.json ni o‘qiydi
  */
 export function getAnalytics(range: AnalyticsRange): AnalyticsData {
-	const filePath = path.join(process.cwd(), 'backend', 'analytics.db.json')
+	const filePath = path.join(process.cwd(), 'backend', 'db.json')
 	const raw = fs.readFileSync(filePath, 'utf-8')
 	const db = JSON.parse(raw)
 

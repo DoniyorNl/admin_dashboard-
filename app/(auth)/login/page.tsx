@@ -71,7 +71,7 @@ export default function LoginPage() {
 				<Input
 					label='Email Address'
 					type='email'
-					placeholder='name@company.com'
+					placeholder='nasridoninl@gmail.com'
 					value={form.email}
 					onChange={e => setForm({ ...form, email: e.target.value })}
 					icon={<Mail className='w-5 h-5' />}
@@ -81,7 +81,7 @@ export default function LoginPage() {
 				<Input
 					label='Password'
 					type={showPass ? 'text' : 'password'}
-					placeholder='••••••••'
+					placeholder='admin123'
 					value={form.password}
 					onChange={e => setForm({ ...form, password: e.target.value })}
 					icon={<Lock className='w-5 h-5' />}

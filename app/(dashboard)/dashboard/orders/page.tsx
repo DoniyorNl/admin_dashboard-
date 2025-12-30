@@ -341,10 +341,10 @@ export default function OrdersPage() {
 						{/* Form */}
 						<div className='grid grid-cols-1 sm:grid-cols-2 gap-4'>
 							{/* Customer Name */}
-							<Input label='Customer Name' placeholder='John Doe' />
+							<Input label='Customer Name' placeholder='name' />
 
 							{/* Email */}
-							<Input label='Email' type='email' placeholder='john@example.com' />
+							<Input label='Email' type='email' placeholder='admin@example.com' />
 
 							{/* Phone */}
 							<Input label='Phone' type='tel' placeholder='+1 234 567 890' />

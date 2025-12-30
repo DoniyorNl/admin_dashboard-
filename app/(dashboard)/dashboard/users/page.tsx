@@ -107,8 +107,7 @@ export default function UsersPage() {
 					<Button variant='outline' size='icon' onClick={fetchUsers} disabled={loading}>
 						<RefreshCw className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} />
 					</Button>
-					<Button>
-						<UserPlus className='w-4 h-4' />
+					<Button icon={<UserPlus className='w-4 h-4' />}>
 						<span className='hidden sm:inline'>Add User</span>
 					</Button>
 				</div>
@@ -176,7 +175,7 @@ export default function UsersPage() {
 						<Button variant='outline' icon={<Filter className='w-4 h-4' />}>
 							Filter
 						</Button>
-						<Button variant='outline' icon={<Download className='w-4 h-4' />}>
+						<Button variant='primary' icon={<Download className='w-4 h-4' />}>
 							<span className='hidden sm:inline'>Export</span>
 						</Button>
 					</div>

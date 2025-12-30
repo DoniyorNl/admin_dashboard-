@@ -7,7 +7,7 @@ import SecurityTab from '@/components/settings/SecurityTab'
 import Button from '@/components/UI/Button'
 import { useSettings } from '@/hooks/useSettings'
 import { AlertCircle, Bell, CheckCircle, Palette, Save, Shield, User, X } from 'lucide-react'
-import { useState } from 'react'
+import { useState, useCallback } from 'react'
 
 export default function Settings() {
 	const [activeTab, setActiveTab] = useState('profile')
@@ -20,31 +20,57 @@ export default function Settings() {
 		{ id: 'security', label: 'Security', icon: Shield },
 	]
 
-	const handleSave = async () => {
-		switch (activeTab) {
-			case 'profile':
-				await settings.updateProfile(settings.profile)
-				break
-			case 'preferences':
-				await settings.updatePreferences(settings.preferences)
-				break
-			case 'notifications':
-				await settings.updateNotifications(settings.notifications)
-				break
-			case 'security':
-				// 2FA uchun Save Changes ishlatilmaydi - toggle2FA alohida
-				// Faqat password change uchun
-				if (settings.security.currentPassword && settings.security.newPassword) {
-					await settings.changePassword({
-						currentPassword: settings.security.currentPassword,
-						newPassword: settings.security.newPassword,
-					})
-				}
-				break
-			default:
-				break
+	// ✅ Profile uchun save handler
+	const handleSaveProfile = useCallback(async () => {
+		try {
+			await settings.updateProfile(settings.profile)
+		} catch (error) {
+			console.error('Failed to save profile:', error)
+			// Error settings.error state ichida handle qilinadi
 		}
-	}
+	}, [settings])
+
+	// ✅ Preferences uchun save handler
+	const handleSavePreferences = useCallback(async () => {
+		try {
+			await settings.updatePreferences(settings.preferences)
+		} catch (error) {
+			console.error('Failed to save preferences:', error)
+		}
+	}, [settings])
+
+	// ✅ Notifications uchun save handler
+	const handleSaveNotifications = useCallback(async () => {
+		try {
+			await settings.updateNotifications(settings.notifications)
+		} catch (error) {
+			console.error('Failed to save notifications:', error)
+		}
+	}, [settings])
+
+	// ✅ Security uchun save handler (faqat password change)
+	const handleChangePassword = useCallback(async () => {
+		if (!settings.security.currentPassword || !settings.security.newPassword) {
+			settings.setError?.('Please fill in all password fields')
+			return
+		}
+
+		try {
+			await settings.changePassword({
+				currentPassword: settings.security.currentPassword,
+				newPassword: settings.security.newPassword,
+			})
+		} catch (error) {
+			console.error('Failed to change password:', error)
+		}
+	}, [settings])
+
+	// ✅ Cancel handler - reset to original values
+	const handleCancel = useCallback(() => {
+		settings.refetch()
+		// Clear any errors
+		settings.clearError?.()
+	}, [settings])
 
 	if (settings.loading) {
 		return (
@@ -81,7 +107,11 @@ export default function Settings() {
 					<div className='fixed top-4 right-4 bg-red-500 text-white px-6 py-3 rounded-lg shadow-lg flex items-center gap-2 z-50 animate-slide-in'>
 						<AlertCircle size={20} />
 						<span>{settings.error}</span>
-						<button onClick={settings.clearError} className='ml-2'>
+						<button
+							onClick={settings.clearError}
+							className='ml-2 hover:bg-red-600 rounded p-1 transition-colors'
+							aria-label='Close error'
+						>
 							<X size={18} />
 						</button>
 					</div>
@@ -90,18 +120,19 @@ export default function Settings() {
 				<div className='bg-white dark:bg-gray-800 rounded-xl shadow-sm overflow-hidden'>
 					{/* Tabs Navigation */}
 					<div className='border-b border-gray-200 dark:border-gray-700'>
-						<nav className='flex'>
+						<nav className='flex overflow-x-auto'>
 							{tabs.map(tab => {
 								const Icon = tab.icon
 								return (
 									<button
 										key={tab.id}
 										onClick={() => setActiveTab(tab.id)}
-										className={`flex items-center gap-2 px-6 py-4 border-b-2 font-medium transition-colors ${
+										disabled={settings.saving}
+										className={`flex items-center gap-2 px-6 py-4 border-b-2 font-medium transition-colors whitespace-nowrap ${
 											activeTab === tab.id
 												? 'border-blue-500 text-blue-600 dark:text-blue-400'
 												: 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600'
-										}`}
+										} ${settings.saving ? 'opacity-50 cursor-not-allowed' : ''}`}
 									>
 										<Icon size={20} />
 										{tab.label}
@@ -113,66 +144,93 @@ export default function Settings() {
 
 					{/* Tab Content */}
 					<div className='p-6'>
+						{/* ✅ ProfileTab - onSave prop bilan */}
 						{activeTab === 'profile' && (
 							<ProfileTab
 								profile={settings.profile}
 								setProfile={settings.setProfile}
 								uploadAvatar={settings.uploadAvatar}
+								onSave={handleSaveProfile}
 								saving={settings.saving}
 							/>
 						)}
 
+						{/* ✅ PreferencesTab - Save button alohida */}
 						{activeTab === 'preferences' && (
-							<PreferencesTab
-								preferences={settings.preferences}
-								setPreferences={settings.setPreferences}
-							/>
-						)}
-
-						{activeTab === 'notifications' && (
-							<NotificationsTab
-								notifications={settings.notifications}
-								setNotifications={settings.setNotifications}
-							/>
-						)}
-
-						{activeTab === 'security' && (
-							<SecurityTab
-								security={settings.security}
-								setSecurity={settings.setSecurity}
-								toggle2FA={settings.toggle2FA}
-								saving={settings.saving}
-							/>
-						)}
-
-						{/* Save Button - Security tab uchun conditional */}
-						<div className='flex justify-end gap-3 mt-8 pt-6 border-t border-gray-200 dark:border-gray-700'>
-							<Button variant='outline' onClick={() => settings.refetch()}>
-								Cancel
-							</Button>
-							{activeTab !== 'security' ? (
-								<Button
-									variant='gradient'
-									onClick={handleSave}
-									loading={settings.saving}
-									icon={<Save size={18} />}
-								>
-									Save Changes
-								</Button>
-							) : (
-								settings.security.currentPassword &&
-								settings.security.newPassword && (
+							<>
+								<PreferencesTab
+									preferences={settings.preferences}
+									setPreferences={settings.setPreferences}
+								/>
+								<div className='flex justify-end gap-3 mt-8 pt-6 border-t border-gray-200 dark:border-gray-700'>
+									<Button variant='outline' onClick={handleCancel} disabled={settings.saving}>
+										Cancel
+									</Button>
 									<Button
 										variant='gradient'
-										onClick={handleSave}
+										onClick={handleSavePreferences}
 										loading={settings.saving}
+										disabled={settings.saving}
 										icon={<Save size={18} />}
 									>
-										Change Password
+										Save Changes
 									</Button>
-								)
-							)}
-						</div>
+								</div>
+							</>
+						)}
+
+						{/* ✅ NotificationsTab - Save button alohida */}
+						{activeTab === 'notifications' && (
+							<>
+								<NotificationsTab
+									notifications={settings.notifications}
+									setNotifications={settings.setNotifications}
+								/>
+								<div className='flex justify-end gap-3 mt-8 pt-6 border-t border-gray-200 dark:border-gray-700'>
+									<Button variant='outline' onClick={handleCancel} disabled={settings.saving}>
+										Cancel
+									</Button>
+									<Button
+										variant='gradient'
+										onClick={handleSaveNotifications}
+										loading={settings.saving}
+										disabled={settings.saving}
+										icon={<Save size={18} />}
+									>
+										Save Changes
+									</Button>
+								</div>
+							</>
+						)}
+
+						{/* ✅ SecurityTab - Faqat password change uchun save button */}
+						{activeTab === 'security' && (
+							<>
+								<SecurityTab
+									security={settings.security}
+									setSecurity={settings.setSecurity}
+									toggle2FA={settings.toggle2FA}
+									saving={settings.saving}
+								/>
+								{/* Faqat password fields to'ldirilgan bo'lsa Save button ko'rsatish */}
+								{settings.security.currentPassword && settings.security.newPassword && (
+									<div className='flex justify-end gap-3 mt-8 pt-6 border-t border-gray-200 dark:border-gray-700'>
+										<Button variant='outline' onClick={handleCancel} disabled={settings.saving}>
+											Cancel
+										</Button>
+										<Button
+											variant='gradient'
+											onClick={handleChangePassword}
+											loading={settings.saving}
+											disabled={settings.saving}
+											icon={<Save size={18} />}
+										>
+											Change Password
+										</Button>
+									</div>
+								)}
+							</>
+						)}
 					</div>
 				</div>
 			</div>

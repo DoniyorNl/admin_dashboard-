@@ -1,5 +1,5 @@
 // hooks/useSettings.ts
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { settingsApi } from '../../services/settings/settingsapi'
 
 type Maybe<T> = T | null
@@ -76,170 +76,261 @@ export const useSettings = () => {
 		twoFactorEnabled: false,
 	})
 
-	// Fetch all settings on mount
-	useEffect(() => {
-		fetchAllSettings()
-	}, [])
-
-	const safeErrMessage = (err: unknown) => {
+	// ✅ Helper: Safe error message extraction
+	const safeErrMessage = useCallback((err: unknown): string => {
 		if (!err) return 'Unknown error'
 		if (err instanceof Error) return err.message
+		if (typeof err === 'string') return err
 		try {
-			return String(err)
+			return JSON.stringify(err)
 		} catch {
 			return 'Unknown error'
 		}
-	}
+	}, [])
 
-	const fetchAllSettings = async (): Promise<void> => {
+	// ✅ Helper: Show success message (auto-hide after 3s)
+	const showSuccess = useCallback(() => {
+		setSuccess(true)
+		setError(null) // Clear any existing errors
+		setTimeout(() => setSuccess(false), 3000)
+	}, [])
+
+	// ✅ Helper: Clear error
+	const clearError = useCallback(() => {
+		setError(null)
+	}, [])
+
+	// ✅ Fetch all settings on mount
+	const fetchAllSettings = useCallback(async (): Promise<void> => {
 		try {
 			setLoading(true)
-			const [profileData, preferencesData, notificationsData] = await Promise.all([
+			setError(null)
+
+			// Fetch all settings in parallel
+			const [profileData, preferencesData, notificationsData, securityData] = await Promise.all([
 				settingsApi.profile.get(),
 				settingsApi.preferences.get(),
 				settingsApi.notifications.get(),
+				settingsApi.security.get(),
 			])
 
 			setProfile(profileData)
 			setPreferences(preferencesData)
 			setNotifications(notificationsData)
-			setError(null)
+			setSecurity(prev => ({
+				...prev,
+				twoFactorEnabled: securityData.twoFactorEnabled,
+			}))
 		} catch (err: unknown) {
-			setError(safeErrMessage(err))
+			const errorMsg = safeErrMessage(err)
+			setError(errorMsg)
+			console.error('Failed to fetch settings:', errorMsg)
 		} finally {
 			setLoading(false)
 		}
-	}
+	}, [safeErrMessage])
 
-	// Profile methods
-	const updateProfile = async (
-		updatedProfile: Partial<Profile>,
-	): Promise<{ success: boolean; error?: string }> => {
-		try {
-			setSaving(true)
-			const data = await settingsApi.profile.update(updatedProfile)
-			setProfile(data)
-			showSuccess()
-			return { success: true }
-		} catch (err: unknown) {
-			const msg = safeErrMessage(err)
-			setError(msg)
-			return { success: false, error: msg }
-		} finally {
-			setSaving(false)
-		}
-	}
+	// ✅ Profile: Update profile
+	const updateProfile = useCallback(
+		async (updatedProfile: Partial<Profile>): Promise<{ success: boolean; error?: string }> => {
+			try {
+				setSaving(true)
+				setError(null)
 
-	const uploadAvatar = async (
-		file: File,
-		onProgress?: (p: number) => void,
-	): Promise<{ success: boolean; avatarUrl?: string; error?: string }> => {
-		try {
-			setSaving(true)
-			const data = await settingsApi.profile.uploadAvatar(file, onProgress)
-			setProfile(prev => ({ ...prev, avatar: (data as any).avatarUrl }))
-			showSuccess()
-			return { success: true, avatarUrl: (data as any).avatarUrl }
-		} catch (err: unknown) {
-			const msg = safeErrMessage(err)
-			setError(msg)
-			return { success: false, error: msg }
-		} finally {
-			setSaving(false)
-		}
-	}
+				const data = await settingsApi.profile.update(updatedProfile)
+				setProfile(data)
+				showSuccess()
 
-	// Preferences methods
-	const updatePreferences = async (
-		updatedPreferences: Partial<Preferences>,
-	): Promise<{ success: boolean; error?: string }> => {
-		try {
-			setSaving(true)
-			const data = await settingsApi.preferences.update(updatedPreferences)
-			setPreferences(data)
-			showSuccess()
-			return { success: true }
-		} catch (err: unknown) {
-			const msg = safeErrMessage(err)
-			setError(msg)
-			return { success: false, error: msg }
-		} finally {
-			setSaving(false)
-		}
-	}
-
-	// Notifications methods
-	const updateNotifications = async (
-		updatedNotifications: Partial<Notifications>,
-	): Promise<{ success: boolean; error?: string }> => {
-		try {
-			setSaving(true)
-			const data = await settingsApi.notifications.update(updatedNotifications)
-			setNotifications(data)
-			showSuccess()
-			return { success: true }
-		} catch (err: unknown) {
-			const msg = safeErrMessage(err)
-			setError(msg)
-			return { success: false, error: msg }
-		} finally {
-			setSaving(false)
-		}
-	}
-
-	// Security methods
-	const changePassword = async (passwordData: {
-		currentPassword: string
-		newPassword: string
-	}): Promise<{ success: boolean; error?: string }> => {
-		try {
-			setSaving(true)
-			await settingsApi.security.changePassword(passwordData)
-			setSecurity(prev => ({
-				...prev,
-				currentPassword: '',
-				newPassword: '',
-				confirmPassword: '',
-			}))
-			showSuccess()
-			return { success: true }
-		} catch (err: unknown) {
-			const msg = safeErrMessage(err)
-			setError(msg)
-			return { success: false, error: msg }
-		} finally {
-			setSaving(false)
-		}
-	}
-
-	const toggle2FA = async (enabled: boolean) => {
-		try {
-			setSaving(true)
-
-			if (enabled) {
-				// Enable 2FA - get QR code
-				const response = await fetch('/authAPI/2fa/enable', { method: 'POST' })
-				const data = await response.json()
-				return data
-			} else {
-				// Disable 2FA
-				await fetch('/authAPI/2fa/disable', { method: 'POST' })
 				return { success: true }
+			} catch (err: unknown) {
+				const msg = safeErrMessage(err)
+				setError(msg)
+				console.error('Failed to update profile:', msg)
+				return { success: false, error: msg }
+			} finally {
+				setSaving(false)
 			}
-		} catch (error) {
-			return { success: false }
-		} finally {
-			setSaving(false)
-		}
-	}
+		},
+		[safeErrMessage, showSuccess],
+	)
 
-	// Helper methods
-	const showSuccess = () => {
-		setSuccess(true)
-		setTimeout(() => setSuccess(false), 3000)
-	}
+	// ✅ Profile: Upload avatar with progress
+	const uploadAvatar = useCallback(
+		async (
+			file: File,
+			onProgress?: (progress: number) => void,
+		): Promise<{ success: boolean; avatarUrl?: string; error?: string }> => {
+			try {
+				setSaving(true)
+				setError(null)
 
-	const clearError = () => setError(null)
+				const data = await settingsApi.profile.uploadAvatar(file, onProgress)
+
+				// Type-safe avatar URL extraction
+				const avatarUrl =
+					typeof data === 'object' && data !== null && 'avatarUrl' in data
+						? (data as { avatarUrl: string }).avatarUrl
+						: null
+
+				if (avatarUrl) {
+					setProfile(prev => ({ ...prev, avatar: avatarUrl }))
+					showSuccess()
+					return { success: true, avatarUrl }
+				} else {
+					throw new Error('Avatar URL not returned from server')
+				}
+			} catch (err: unknown) {
+				const msg = safeErrMessage(err)
+				setError(msg)
+				console.error('Failed to upload avatar:', msg)
+				return { success: false, error: msg }
+			} finally {
+				setSaving(false)
+			}
+		},
+		[safeErrMessage, showSuccess],
+	)
+
+	// ✅ Preferences: Update preferences
+	const updatePreferences = useCallback(
+		async (
+			updatedPreferences: Partial<Preferences>,
+		): Promise<{ success: boolean; error?: string }> => {
+			try {
+				setSaving(true)
+				setError(null)
+
+				const data = await settingsApi.preferences.update(updatedPreferences)
+				setPreferences(data)
+				showSuccess()
+
+				return { success: true }
+			} catch (err: unknown) {
+				const msg = safeErrMessage(err)
+				setError(msg)
+				console.error('Failed to update preferences:', msg)
+				return { success: false, error: msg }
+			} finally {
+				setSaving(false)
+			}
+		},
+		[safeErrMessage, showSuccess],
+	)
+
+	// ✅ Notifications: Update notifications
+	const updateNotifications = useCallback(
+		async (
+			updatedNotifications: Partial<Notifications>,
+		): Promise<{ success: boolean; error?: string }> => {
+			try {
+				setSaving(true)
+				setError(null)
+
+				const data = await settingsApi.notifications.update(updatedNotifications)
+				setNotifications(data)
+				showSuccess()
+
+				return { success: true }
+			} catch (err: unknown) {
+				const msg = safeErrMessage(err)
+				setError(msg)
+				console.error('Failed to update notifications:', msg)
+				return { success: false, error: msg }
+			} finally {
+				setSaving(false)
+			}
+		},
+		[safeErrMessage, showSuccess],
+	)
+
+	// ✅ Security: Change password
+	const changePassword = useCallback(
+		async (passwordData: {
+			currentPassword: string
+			newPassword: string
+		}): Promise<{ success: boolean; error?: string }> => {
+			try {
+				setSaving(true)
+				setError(null)
+
+				// Validate passwords
+				if (!passwordData.currentPassword || !passwordData.newPassword) {
+					throw new Error('Please provide both current and new password')
+				}
+
+				if (passwordData.newPassword.length < 8) {
+					throw new Error('New password must be at least 8 characters')
+				}
+
+				await settingsApi.security.changePassword(passwordData)
+
+				// Clear password fields on success
+				setSecurity(prev => ({
+					...prev,
+					currentPassword: '',
+					newPassword: '',
+					confirmPassword: '',
+				}))
+
+				showSuccess()
+				return { success: true }
+			} catch (err: unknown) {
+				const msg = safeErrMessage(err)
+				setError(msg)
+				console.error('Failed to change password:', msg)
+				return { success: false, error: msg }
+			} finally {
+				setSaving(false)
+			}
+		},
+		[safeErrMessage, showSuccess],
+	)
+
+	// ✅ Security: Toggle 2FA
+	const toggle2FA = useCallback(
+		async (enabled: boolean): Promise<{ success: boolean; qrCode?: string; error?: string }> => {
+			try {
+				setSaving(true)
+				setError(null)
+
+				let result: { success: boolean; qrCode?: string }
+
+				if (enabled) {
+					// Enable 2FA
+					result = await settingsApi.security.enable2FA()
+				} else {
+					// Disable 2FA
+					result = await settingsApi.security.disable2FA()
+				}
+
+				if (result.success) {
+					// Update state
+					setSecurity(prev => ({
+						...prev,
+						twoFactorEnabled: enabled,
+					}))
+
+					showSuccess()
+					return { success: true, qrCode: result.qrCode }
+				} else {
+					throw new Error('Failed to toggle 2FA')
+				}
+			} catch (err: unknown) {
+				const msg = safeErrMessage(err)
+				setError(msg)
+				console.error('Failed to toggle 2FA:', msg)
+				return { success: false, error: msg }
+			} finally {
+				setSaving(false)
+			}
+		},
+		[safeErrMessage, showSuccess],
+	)
+
+	// ✅ Fetch settings on mount
+	useEffect(() => {
+		fetchAllSettings()
+	}, [fetchAllSettings])
 
 	return {
 		// State
@@ -271,6 +362,7 @@ export const useSettings = () => {
 		setSecurity,
 
 		// Helper methods
+		setError, // ✅ Qo'shildi!
 		clearError,
 		refetch: fetchAllSettings,
 	}
