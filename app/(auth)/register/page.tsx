@@ -153,12 +153,7 @@ export default function RegisterPage() {
 					</button>
 				</div>
 
-				{(!oauthProviders.google || !oauthProviders.github) && (
-					<p className='text-xs text-amber-600 dark:text-amber-400 text-center'>
-						Google/GitHub OAuth ishlashi uchun `.env.local` ichida provider kalitlarini to‘liq
-						kiriting va serverni qayta ishga tushiring.
-					</p>
-				)}
+	
 
 				<div className='text-center text-xs text-slate-600 dark:text-slate-400'>
 					Already have an account?{' '}

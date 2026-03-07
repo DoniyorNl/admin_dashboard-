@@ -70,6 +70,8 @@ if (githubClientId && githubClientSecret) {
 		GitHubProvider({
 			clientId: githubClientId,
 			clientSecret: githubClientSecret,
+			// Ensure we can reliably read user's primary email (GitHub may hide public email).
+			authorization: { params: { scope: 'read:user user:email' } },
 		}),
 	)
 }

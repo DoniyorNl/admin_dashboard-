@@ -4,6 +4,20 @@ import { NextRequest, NextResponse } from 'next/server'
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'
 
+type DbUser = {
+	id: number | string
+	email: string
+	name: string
+	password?: string
+}
+
+function isDbUser(value: unknown): value is DbUser {
+	if (typeof value !== 'object' || value === null) return false
+	if (!('email' in value) || !('name' in value) || !('id' in value)) return false
+	const v = value as { email?: unknown; name?: unknown; id?: unknown }
+	return typeof v.email === 'string' && typeof v.name === 'string' && (typeof v.id === 'number' || typeof v.id === 'string')
+}
+
 // Random parol generatori
 function generateRandomPassword(length: number = 12): string {
 	const uppercase = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
@@ -34,8 +48,8 @@ function generateRandomPassword(length: number = 12): string {
 
 export async function POST(request: NextRequest) {
 	try {
-		const body = await request.json()
-		const { email } = body
+		const body = (await request.json()) as { email?: unknown }
+		const email = typeof body.email === 'string' ? body.email.trim() : ''
 
 		// Email validatsiyasi
 		if (!email) {
@@ -61,10 +75,12 @@ export async function POST(request: NextRequest) {
 			throw new Error('Failed to fetch users')
 		}
 
-		const users = await usersResponse.json()
+		const users = (await usersResponse.json()) as unknown
 
 		// Email bo'yicha foydalanuvchini topish
-		const user = users.find((u: any) => u.email.toLowerCase() === email.toLowerCase())
+		const user = Array.isArray(users)
+			? users.find(u => isDbUser(u) && u.email.toLowerCase() === email.toLowerCase())
+			: undefined
 
 		if (!user) {
 			return NextResponse.json(

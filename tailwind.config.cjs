@@ -1,14 +1,14 @@
 /** @type {import('tailwindcss').Config} */
 module.exports = {
 	darkMode: 'class',
-	content: ['./app/**/*.{ts,tsx}', './components/**/*.{ts,tsx}'],
+	content: ['./app/**/*.{ts,tsx}', './lib/**/*.{ts,tsx}'],
 	theme: {
 		extend: {
 			colors: {
-				primary: '#1D4ED8', // blue
-				secondary: '#374151', // gray
-				accent: '#065F46', // dark green
-				danger: '#EF4444', // red for errors / hover
+				primary: '#4F46E5', // indigo-600
+				secondary: '#0B1220', // deep slate for contrast
+				accent: '#10B981', // emerald-500
+				danger: '#EF4444', // red-500
 			},
 		},
 	},

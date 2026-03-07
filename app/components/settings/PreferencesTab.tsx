@@ -2,27 +2,25 @@
 
 import { Monitor, Moon, Sun } from 'lucide-react'
 import { useTheme } from 'next-themes'
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
+import type { Preferences } from '@/hooks/useSettings'
 
-interface PreferencesTabProps {
-	preferences: any
-	setPreferences: (preferences: any) => void
+type PreferencesTabProps = {
+	preferences: Preferences
+	setPreferences: React.Dispatch<React.SetStateAction<Preferences>>
 }
 
 export default function PreferencesTab({ preferences, setPreferences }: PreferencesTabProps) {
 	const { theme, setTheme, systemTheme } = useTheme()
-	const [mounted, setMounted] = useState(false)
-
-	useEffect(() => setMounted(true), [])
 
 	// Theme o'zgarganda preferences'ni ham yangilash
 	useEffect(() => {
-		if (mounted && theme) {
-			setPreferences({ ...preferences, theme })
-		}
-	}, [theme, mounted])
+		if (!theme) return
+		setPreferences(prev => (prev.theme === theme ? prev : { ...prev, theme }))
+	}, [theme, setPreferences])
 
-	if (!mounted) {
+	// next-themes resolves theme on the client; render a small skeleton until ready.
+	if (!theme) {
 		return (
 			<div className='space-y-6'>
 				<div className='animate-pulse'>
@@ -102,7 +100,7 @@ export default function PreferencesTab({ preferences, setPreferences }: Preferen
 						className='px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all'
 					>
 						<option value='en'>English</option>
-						<option value='uz'>O'zbekcha</option>
+						<option value='uz'>O&apos;zbekcha</option>
 						<option value='ru'>Русский</option>
 					</select>
 				</div>

@@ -9,22 +9,34 @@
   1. CSS Variables / Theme Colors
 -----------------------------------*/
 :root {
-	--color-primary: #1d4ed8; /* blue */
-	--color-primary-dark: #1e40af;
-	--color-accent: #065f46; /* dark green */
-	--color-accent-dark: #064e3b;
-	--color-gray-light: #f3f4f6;
-	--color-gray-dark: #1f2937;
-	--radius-base: 0.5rem;
-	--transition-speed: 0.3s;
+	/* Core tokens */
+	--bg: 248 250 252;
+	--fg: 15 23 42;
+	--muted: 100 116 139;
+	--card: 255 255 255;
+	--border: 226 232 240;
+
+	/* Brand */
+	--primary: 79 70 229; /* indigo-600 */
+	--primary-2: 37 99 235; /* blue-600 */
+	--accent: 16 185 129; /* emerald-500 */
+
+	/* Motion + shape */
+	--radius-base: 0.75rem;
+	--transition-speed: 0.25s;
 }
 
-/* Dark mode variables */
-html[data-theme='dark'] {
-	--color-primary: #1e3a8a;
-	--color-accent: #064e3b;
-	--color-gray-light: #1f2937;
-	--color-gray-dark: #f3f4f6;
+/* Dark mode tokens (next-themes: .dark on <html>) */
+.dark {
+	--bg: 2 6 23; /* slate-950 */
+	--fg: 241 245 249; /* slate-100 */
+	--muted: 148 163 184; /* slate-400 */
+	--card: 15 23 42; /* slate-900 */
+	--border: 30 41 59; /* slate-800 */
+
+	--primary: 99 102 241; /* indigo-500 */
+	--primary-2: 59 130 246; /* blue-500 */
+	--accent: 52 211 153; /* emerald-400 */
 }
 
 /*-----------------------------------
@@ -40,15 +52,22 @@ html[data-theme='dark'] {
 
 html {
 	scroll-behavior: smooth;
-	font-family: 'Inter', sans-serif;
 	line-height: 1.6;
-	background-color: var(--color-gray-light);
-	color: var(--color-gray-dark);
+	background-color: rgb(var(--bg));
+	color: rgb(var(--fg));
 }
 
 body {
 	min-height: 100vh;
-	transition: background-color 0.3s ease, color 0.3s ease;
+	font-family: var(--font-geist-sans);
+	transition: background-color var(--transition-speed) ease, color var(--transition-speed) ease;
+	background-color: rgb(var(--bg));
+	color: rgb(var(--fg));
+	text-rendering: geometricPrecision;
+}
+
+.font-mono {
+	font-family: var(--font-geist-mono);
 }
 
 .filter-item {
@@ -79,12 +98,16 @@ a {
 }
 
 ::-webkit-scrollbar-track {
-	background: var(--color-gray-light);
+	background: rgb(var(--bg));
 }
 
 ::-webkit-scrollbar-thumb {
-	background-color: rgb(68, 68, 68);
+	background-color: rgba(148, 163, 184, 0.65);
 	border-radius: var(--radius-base);
+}
+
+.dark ::-webkit-scrollbar-thumb {
+	background-color: rgba(51, 65, 85, 0.9);
 }
 
 .dashboard-main::-webkit-scrollbar-thumb {
@@ -116,16 +139,6 @@ p {
 
 .rounded-base {
 	border-radius: var(--radius-base);
-}
-
-/*-----------------------------------
-  6. Dark mode support
------------------------------------*/
-@media (prefers-color-scheme: dark) {
-	html {
-		background-color: var(--color-gray-dark);
-		color: var(--color-gray-light);
-	}
 }
 
 /*-----------------------------------

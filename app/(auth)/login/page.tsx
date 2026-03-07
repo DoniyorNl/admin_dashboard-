@@ -200,13 +200,6 @@ export default function LoginPage() {
 					</button>
 				</div>
 
-				{(!oauthProviders.google || !oauthProviders.github) && (
-					<p className='text-xs text-amber-600 dark:text-amber-400 text-center'>
-						Google/GitHub OAuth ishlashi uchun `.env.local` ichida provider kalitlarini to‘liq
-						kiriting va serverni qayta ishga tushiring.
-					</p>
-				)}
-
 				<div className='text-center text-sm text-slate-600 dark:text-slate-400'>
 					Don&apos;t have an account?{' '}
 					<Link

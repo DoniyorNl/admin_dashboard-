@@ -106,7 +106,7 @@ export default function ForgotPassword() {
 									Forgot Password?
 								</h1>
 								<p className='text-gray-600 dark:text-gray-400'>
-									Don't worry! Enter your email and we'll send you a new password.
+									Don&apos;t worry! Enter your email and we&apos;ll send you a new password.
 								</p>
 							</div>
 
@@ -176,7 +176,7 @@ export default function ForgotPassword() {
 									Email Sent Successfully!
 								</h2>
 								<p className='text-gray-600 dark:text-gray-400 mb-6'>
-									We've sent your new password to <strong>{sentEmail}</strong>
+									We&apos;ve sent your new password to <strong>{sentEmail}</strong>
 								</p>
 
 								{/* Email Icon Display */}

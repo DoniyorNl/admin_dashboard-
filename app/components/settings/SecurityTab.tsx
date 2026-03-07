@@ -2,10 +2,11 @@
 
 import { Eye, EyeOff, Lock, Smartphone } from 'lucide-react'
 import { useMemo, useState } from 'react'
+import type { Security } from '@/hooks/useSettings'
 
-interface SecurityTabProps {
-	security: any
-	setSecurity: (security: any) => void
+type SecurityTabProps = {
+	security: Security
+	setSecurity: React.Dispatch<React.SetStateAction<Security>>
 	toggle2FA: (enabled: boolean) => Promise<{ success: boolean; qrCode?: string; secret?: string }>
 	saving: boolean
 }

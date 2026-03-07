@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { X } from 'lucide-react'
 import { Product } from '@/types/products'
 import BaseModal from '@/components/UI/BaseModal'
@@ -11,31 +11,19 @@ type Props = {
 	onSave: (product: Product) => void
 }
 
-export default function AddProductModal({ initialData, onClose, onSave }: Props) {
-	const [formData, setFormData] = useState<Partial<Product>>({
-		name: '',
-		price: 0,
-		category: '',
-		status: 'active',
-		description: '',
-		image: '',
-	})
-	const [errors, setErrors] = useState<Record<string, string>>({})
+const EMPTY_FORM: Partial<Product> = {
+	name: '',
+	price: 0,
+	category: '',
+	status: 'active',
+	description: '',
+	image: '',
+}
 
-	useEffect(() => {
-		if (initialData) {
-			setFormData(initialData)
-		} else {
-			setFormData({
-				name: '',
-				price: 0,
-				category: '',
-				status: 'active',
-				description: '',
-				image: '',
-			})
-		}
-	}, [initialData])
+export default function AddProductModal({ initialData, onClose, onSave }: Props) {
+	// This modal is expected to be mounted per open; initialize once from props.
+	const [formData, setFormData] = useState<Partial<Product>>(() => initialData ?? EMPTY_FORM)
+	const [errors, setErrors] = useState<Record<string, string>>({})
 
 	const handleChange = (
 		e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>,

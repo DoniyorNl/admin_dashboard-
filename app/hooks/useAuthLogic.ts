@@ -1,6 +1,7 @@
 'use client'
 
 import { setClientUser } from 'lib/auth/auth.client'
+import type { User } from 'lib/auth/types'
 import { useRouter } from 'next/navigation'
 import { FormEvent, useState } from 'react'
 import { apiFetch } from '../../lib/api/config'
@@ -41,7 +42,7 @@ export function useAuthLogic() {
 		try {
 			const result = await apiFetch<
 				| { requiresTwoFactor: true; userId: number; message?: string }
-				| { success: true; user: any }
+				| { success: true; user: User }
 				| { success: false; error: string }
 			>('/authAPI/login', {
 				method: 'POST',
@@ -92,7 +93,7 @@ export function useAuthLogic() {
 		setStatus(s => ({ ...s, loading: true, error: '' }))
 
 		try {
-			const result = await apiFetch<{ success: boolean; user?: any; error?: string }>(
+			const result = await apiFetch<{ success: true; user: User } | { success: false; error?: string }>(
 				'/authAPI/2fa/verify',
 				{
 					method: 'POST',
@@ -137,7 +138,7 @@ export function useAuthLogic() {
 		setStatus(s => ({ ...s, loading: true, error: '' }))
 
 		try {
-			const result = await apiFetch<{ success: boolean; user?: any; error?: string }>(
+			const result = await apiFetch<{ success: true; user: User } | { success: false; error?: string }>(
 				'/authAPI/register',
 				{
 					method: 'POST',

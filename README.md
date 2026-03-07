@@ -8,6 +8,8 @@ English / Uzbek bilingual README — qisqacha loyiha mazmuni, ishga tushirish va
 
 This is a Next.js (App Router) admin dashboard that uses a small local JSON backend for demo data.
 
+- Public demo (no login): `/demo` — recruiter/Lighthouse-friendly read-only analytics view.
+
 - UI: Tailwind CSS + small component library under `app/components/UI/`.
 - Routing & layouts: App Router under `app/` with nested dashboard layout at `app/(dashboard)/dashboard/layout.tsx`.
 - API layer: `lib/api/*` contains `apiFetch` and product helpers. `API_BASE_URL` is read from `NEXT_PUBLIC_API_URL` or defaults to `http://localhost:4000`.
@@ -39,16 +41,25 @@ npm run dev:all
 http://localhost:3000
 ```
 
+Public demo:
+
+```text
+http://localhost:3000/demo
+```
+
 Notes:
 
 - `dev:all` uses `concurrently` to run `json-server` and `next dev` together. You can still run `npm run json` and `npm run dev` separately.
 - To change the backend URL, set `NEXT_PUBLIC_API_URL` in your environment.
+- For correct OpenGraph/sitemap/manifest URLs in production, set `NEXT_PUBLIC_SITE_URL`.
 
 ---
 
 ## Overview (O'zbek)
 
 Bu loyiha Next.js (App Router) asosida yozilgan admin dashboard bo'lib, demo ma'lumotlar uchun lokal JSON backend (`json-server`) ishlatadi.
+
+- Public demo (login shart emas): `/demo` — recruiter/Lighthouse uchun read-only analytics sahifa.
 
 - UI: Tailwind CSS va kichik UI komponentlari `app/components/UI/` da joylashgan.
 - Router va layoutlar: `app/` ichida App Router; dashboard layout manzili: `app/(dashboard)/dashboard/layout.tsx`.
@@ -81,10 +92,17 @@ npm run dev:all
 http://localhost:3000
 ```
 
+Public demo:
+
+```text
+http://localhost:3000/demo
+```
+
 Izohlar:
 
 - `dev:all` `concurrently` paketidan foydalanadi va `json-server` hamda `next dev` ni birgalikda ishga tushiradi. Xohlasangiz alohida `npm run json` va `npm run dev` dan ham foydalanishingiz mumkin.
 - Agar backend URL ni o'zgartirmoqchi bo'lsangiz, `NEXT_PUBLIC_API_URL` muhit o'zgaruvchisidan foydalaning.
+- Production muhitida OpenGraph/sitemap/manifest URL'lar to'g'ri chiqishi uchun `NEXT_PUBLIC_SITE_URL` ni set qiling.
 
 ---
 
@@ -131,3 +149,5 @@ If you want to improve the project:
 - Email setup: `docs/EMAIL_SETUP.md`
 - OAuth setup: `docs/OAUTH_SETUP.md`
 - Architecture overview: `docs/ARCHITECTURE.md`
+- SEO & social metadata: `docs/SEO.md`
+- Public demo notes: `docs/DEMO.md`

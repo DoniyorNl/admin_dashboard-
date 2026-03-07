@@ -13,7 +13,7 @@
  * @param timeoutMs - Timeout milliseconds (default: 5000)
  * @returns Data yoki null
  */
-export async function safeFetchJson<T = any>(
+export async function safeFetchJson<T = unknown>(
 	endpoint: string,
 	timeoutMs: number = 5000,
 ): Promise<T | null> {
@@ -71,7 +71,7 @@ export async function safeFetchJson<T = any>(
  * @param retries - Qayta urinishlar soni (default: 2)
  * @returns Data yoki null
  */
-export async function safeFetchJsonWithRetry<T = any>(
+export async function safeFetchJsonWithRetry<T = unknown>(
 	endpoint: string,
 	timeoutMs: number = 5000,
 	retries: number = 2,
@@ -99,9 +99,9 @@ export async function safeFetchJsonWithRetry<T = any>(
 /**
  * POST request with safe error handling
  */
-export async function safePostJson<T = any>(
+export async function safePostJson<T = unknown>(
 	endpoint: string,
-	body: any,
+	body: unknown,
 	timeoutMs: number = 5000,
 ): Promise<T | null> {
 	const base = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'

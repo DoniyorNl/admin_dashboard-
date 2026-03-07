@@ -1,5 +1,7 @@
-export function validateRequired(value: any, fieldName = 'Field') {
-	if (!value || (typeof value === 'string' && !value.trim())) return `${fieldName} is required`
+export function validateRequired(value: unknown, fieldName = 'Field') {
+	if (value === null || value === undefined) return `${fieldName} is required`
+	if (typeof value === 'string' && !value.trim()) return `${fieldName} is required`
+	if (Array.isArray(value) && value.length === 0) return `${fieldName} is required`
 	return ''
 }
 
