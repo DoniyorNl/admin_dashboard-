@@ -1,6 +1,6 @@
 'use client'
 
-import { clearClientAuth, getClientUser, setClientUser } from 'lib/auth/auth.client'
+import { clearClientAuth, setClientUser } from 'lib/auth/auth.client'
 import { AuthMeResponse, User } from 'lib/auth/types'
 import { AlertCircle, Loader2 } from 'lucide-react'
 import { usePathname, useRouter } from 'next/navigation'
@@ -51,27 +51,14 @@ export default function Protected({ children }: { children: React.ReactNode }) {
 					return
 				}
 
-				// 401/403 bo‘lsa: localStorage fallback
-				const local = getClientUser()
-				if (local) {
-					if (!alive) return
-					setAuth({ status: 'authed', user: local, error: null })
-					return
-				}
-
 				// To‘liq unauth
 				if (!alive) return
 				clearClientAuth()
 				setAuth({ status: 'unauthed', user: null, error: 'Please sign in to continue' })
 				router.replace('/login')
-			} catch (e) {
-				// Fetch abort bo‘lsa jim
+			} catch {
+				if (controller.signal.aborted) return
 				if (!alive) return
-				const local = getClientUser()
-				if (local) {
-					setAuth({ status: 'authed', user: local, error: null })
-					return
-				}
 				clearClientAuth()
 				setAuth({ status: 'unauthed', user: null, error: 'Failed to verify authentication' })
 				router.replace('/login')

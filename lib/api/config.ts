@@ -1,5 +1,5 @@
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'
-const AUTH_API_BASE_URL = process.env.NEXT_PUBLIC_AUTH_API_URL || 'http://localhost:4001'
+const AUTH_API_BASE_URL = process.env.NEXT_PUBLIC_AUTH_API_URL || 'http://localhost:4000'
 
 export const EXTERNAL_APIS = {
 	jsonPlaceholder: 'https://jsonplaceholder.typicode.com',
@@ -13,6 +13,22 @@ export interface ApiResponse<T> {
 	status: number
 }
 
+function getPayloadMessage(payload: unknown): string | null {
+	if (!payload || typeof payload !== 'object') return null
+
+	const candidate = payload as { message?: unknown; error?: unknown }
+
+	if (typeof candidate.message === 'string' && candidate.message.trim()) {
+		return candidate.message
+	}
+
+	if (typeof candidate.error === 'string' && candidate.error.trim()) {
+		return candidate.error
+	}
+
+	return null
+}
+
 // ✅ Yangi apiFetch - error throw qilmaydi
 export async function apiFetch<T = unknown>(
 	endpoint: string,
@@ -21,8 +37,8 @@ export async function apiFetch<T = unknown>(
 	const url = endpoint.startsWith('http')
 		? endpoint
 		: endpoint.startsWith('/authAPI')
-		? endpoint
-		: `${API_BASE_URL}${endpoint}`
+			? endpoint
+			: `${API_BASE_URL}${endpoint}`
 
 	const config: RequestInit = {
 		...options,
@@ -46,12 +62,7 @@ export async function apiFetch<T = unknown>(
 		}
 
 		if (!response.ok) {
-			const message =
-				(typeof payload === 'object' && payload !== null && 'message' in payload
-					? (payload as any).message
-					: typeof payload === 'object' && payload !== null && 'error' in payload
-					? (payload as any).error
-					: null) || `HTTP ${response.status}`
+			const message = getPayloadMessage(payload) || `HTTP ${response.status}`
 
 			// ❌ throw new Error(message) - OLIB TASHLADIK
 

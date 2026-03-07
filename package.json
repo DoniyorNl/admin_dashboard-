@@ -1,5 +1,5 @@
 {
-	"name": "admin_dashboard-",
+	"name": "admin-dashboard",
 	"version": "0.1.0",
 	"private": true,
 	"scripts": {
@@ -8,7 +8,9 @@
 		"dev:all": "concurrently \"npm:json\" \"npm:dev\"",
 		"build": "next build",
 		"start": "next start",
-		"lint": "next lint"
+		"lint": "eslint .",
+		"test": "vitest run",
+		"test:watch": "vitest"
 	},
 	"dependencies": {
 		"@tailwindcss/vite": "^4.1.18",
@@ -41,6 +43,7 @@
 		"eslint-config-next": "16.0.10",
 		"json-server": "^1.0.0-beta.3",
 		"postcss": "^8.5.6",
-		"typescript": "^5"
+		"typescript": "^5",
+		"vitest": "^3.2.4"
 	}
 }

@@ -91,7 +91,6 @@ Izohlar:
 ## Architecture & Important Files
 
 - `app/` — Next.js App Router, layouts va sahifalar.
-
   - `app/(dashboard)/dashboard/layout.tsx` — server-side layout; cookie orqali auth tekshiradi va agar token bo'lsa client layout (`ClientDashboardLayout`) ni render qiladi.
   - `app/components/auth/Protected.tsx` — client-side guard, localStorage tekshiradi va loading ko'rsatadi.
 
@@ -105,7 +104,7 @@ Izohlar:
 
 ## Development notes & decisions
 
-- Auth flow: server sets an httpOnly cookie so server-side checks are secure; client also keeps a non-httpOnly `localStorage` copy for client-side guards and quick UI state. This is a convenience for a demo app — for production prefer server-side sessions or JWT with proper security.
+- Auth flow: server sets an httpOnly cookie and authentication checks use `/authAPI/me` on protected client surfaces. `localStorage` is only used to cache non-sensitive user profile data for UI convenience.
 - Server-side protection: layout and `middleware.ts` handle redirects before pages render on the server, preventing flash of unauthenticated content.
 - Use `lib/api/*` helpers for network calls — they centralize headers and error handling.
 
@@ -115,6 +114,8 @@ Izohlar:
 - `npm run json` — start `json-server` on port 4000.
 - `npm run dev:all` — start both services together (uses `concurrently`).
 - `npm run build` / `npm run start` — build and start production server.
+- `npm run test` — run unit tests.
+- `npm run test:watch` — run tests in watch mode.
 
 ## Contributing
 
@@ -124,6 +125,9 @@ If you want to improve the project:
 - Start dev servers: `npm run dev:all`.
 - Make small, focused changes and follow existing patterns (App Router server/client split, `lib/api/*` helpers, Tailwind UI components).
 
----
+## Documentation
 
-If xohlasangiz, READMEni yanada qisqaroq yoki texnikroq qilib o'zgartiraman, yoki `CONTRIBUTING.md` qo'shib jamoa qoidalarini yozib beraman.
+- Security notes: `docs/2FA-PRODUCTION-SECURITY.md`
+- Email setup: `docs/EMAIL_SETUP.md`
+- OAuth setup: `docs/OAUTH_SETUP.md`
+- Architecture overview: `docs/ARCHITECTURE.md`

@@ -4,70 +4,81 @@ import CredentialsProvider from 'next-auth/providers/credentials'
 import GitHubProvider from 'next-auth/providers/github'
 import GoogleProvider from 'next-auth/providers/google'
 
-export const authOptions: NextAuthOptions = {
-	providers: [
-		// Google OAuth
+const googleClientId = process.env.GOOGLE_CLIENT_ID
+const googleClientSecret = process.env.GOOGLE_CLIENT_SECRET
+const githubClientId = process.env.GITHUB_CLIENT_ID
+const githubClientSecret = process.env.GITHUB_CLIENT_SECRET
+
+const providers: NextAuthOptions['providers'] = [
+	// Email/Password (hozirgi login)
+	CredentialsProvider({
+		name: 'credentials',
+		credentials: {
+			email: { label: 'Email', type: 'email' },
+			password: { label: 'Password', type: 'password' },
+		},
+		async authorize(credentials) {
+			if (!credentials?.email || !credentials?.password) {
+				throw new Error('Email and password required')
+			}
+
+			try {
+				const response = await fetch(`${AUTH_API_BASE_URL}/users?email=${credentials.email}`, {
+					cache: 'no-store',
+				})
+
+				if (!response.ok) {
+					throw new Error('Failed to fetch user')
+				}
+
+				const users = await response.json()
+				const user = users[0]
+
+				if (!user) {
+					throw new Error('No user found')
+				}
+
+				if (user.password !== credentials.password) {
+					throw new Error('Invalid password')
+				}
+
+				return {
+					id: user.id.toString(),
+					email: user.email,
+					name: user.name,
+					role: user.role,
+				}
+			} catch (error) {
+				console.error('Authorization error:', error)
+				return null
+			}
+		},
+	}),
+]
+
+if (googleClientId && googleClientSecret) {
+	providers.unshift(
 		GoogleProvider({
-			clientId: process.env.GOOGLE_CLIENT_ID || '',
-			clientSecret: process.env.GOOGLE_CLIENT_SECRET || '',
+			clientId: googleClientId,
+			clientSecret: googleClientSecret,
 		}),
+	)
+}
 
-		// GitHub OAuth
+if (githubClientId && githubClientSecret) {
+	providers.unshift(
 		GitHubProvider({
-			clientId: process.env.GITHUB_CLIENT_ID || '',
-			clientSecret: process.env.GITHUB_CLIENT_SECRET || '',
+			clientId: githubClientId,
+			clientSecret: githubClientSecret,
 		}),
+	)
+}
 
-		// Email/Password (hozirgi login)
-		CredentialsProvider({
-			name: 'credentials',
-			credentials: {
-				email: { label: 'Email', type: 'email' },
-				password: { label: 'Password', type: 'password' },
-			},
-			async authorize(credentials) {
-				if (!credentials?.email || !credentials?.password) {
-					throw new Error('Email and password required')
-				}
-
-				try {
-					// Hozirgi login API orqali tekshirish
-					const response = await fetch(`${AUTH_API_BASE_URL}/users?email=${credentials.email}`, {
-						cache: 'no-store',
-					})
-
-					if (!response.ok) {
-						throw new Error('Failed to fetch user')
-					}
-
-					const users = await response.json()
-					const user = users[0]
-
-					if (!user) {
-						throw new Error('No user found')
-					}
-
-					// Password tekshirish (hozircha oddiy tekshiruv - production'da bcrypt ishlating)
-					if (user.password !== credentials.password) {
-						throw new Error('Invalid password')
-					}
-
-					return {
-						id: user.id.toString(),
-						email: user.email,
-						name: user.name,
-						role: user.role,
-					}
-				} catch (error) {
-					console.error('Authorization error:', error)
-					return null
-				}
-			},
-		}),
-	],
+export const authOptions: NextAuthOptions = {
+	providers,
 
 	callbacks: {
-		async signIn({ user, account, profile }) {
+		async signIn({ user, account }) {
 			// OAuth (Google/GitHub) orqali kirish
 			if (account?.provider === 'google' || account?.provider === 'github') {
 				try {
@@ -122,10 +133,11 @@ export const authOptions: NextAuthOptions = {
 		async jwt({ token, user, account }) {
 			// Birinchi marta sign in qilganda
 			if (user) {
+				const authUser = user as typeof user & { role?: string }
 				token.id = user.id
 				token.email = user.email
 				token.name = user.name
-				token.role = (user as any).role || 'user'
+				token.role = authUser.role || 'user'
 			}
 
 			// OAuth provider ma'lumotini saqlash
@@ -139,17 +151,51 @@ export const authOptions: NextAuthOptions = {
 		async session({ session, token }) {
 			// Session'ga token ma'lumotlarini qo'shish
 			if (session.user) {
-				;(session.user as any).id = token.id
-				;(session.user as any).role = token.role
-				;(session.user as any).provider = token.provider
+				const enrichedUser = session.user as typeof session.user & {
+					id?: string
+					role?: string
+					provider?: string
+				}
+
+				enrichedUser.id = token.id ? String(token.id) : ''
+				enrichedUser.role = token.role ? String(token.role) : 'user'
+				enrichedUser.provider = token.provider ? String(token.provider) : 'credentials'
 			}
 			return session
+		},
+
+		/**
+		 * OAuth sign-in muvaffaqiyatli bo'lgandan so'ng foydalanuvchi
+		 * /authAPI/oauth-sync ga yo'naltiriladi — u yerda custom auth_token
+		 * cookie o'rnatiladi va /dashboard ga redirect qilinadi.
+		 *
+		 * Credentials (email/password) oqimida bu callback ishlamaydi chunki
+		 * u NextAuth signIn'dan emas, to'g'ridan-to'g'ri /authAPI/login dan o'tadi.
+		 */
+		async redirect({ url, baseUrl }) {
+			// OAuth callback URLlarini oauth-sync orqali o'tkazish
+			if (url === `${baseUrl}/authAPI/oauth-sync`) {
+				return `${baseUrl}/authAPI/oauth-sync`
+			}
+
+			// Relative URL bo'lsa baseUrl ga biriktiramiz
+			if (url.startsWith('/')) return `${baseUrl}${url}`
+
+			// Xavfsiz: faqat bir xil origin'ga yo'naltirish
+			try {
+				if (new URL(url).origin === baseUrl) return url
+			} catch {
+				// Invalid URL — fallback
+			}
+
+			return baseUrl
 		},
 	},
 
 	pages: {
 		signIn: '/login',
 		error: '/login',
+		newUser: '/authAPI/oauth-sync',
 	},
 
 	session: {

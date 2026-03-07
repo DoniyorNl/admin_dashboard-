@@ -1,6 +1,6 @@
 'use client'
 
-import { getClientUser, logoutUser } from 'lib/auth/auth.client'
+import { clearClientAuth, getClientUser, logoutUser, setClientUser } from 'lib/auth/auth.client'
 import { Bell, ChevronDown, LogOut, Menu, Moon, Search, Settings, Sun, User } from 'lucide-react'
 import { useTheme } from 'next-themes'
 import { useEffect, useRef, useState } from 'react'
@@ -10,19 +10,45 @@ import type { User as AuthUser } from 'lib/auth/types'
 export default function Header() {
 	const [user, setUser] = useState<AuthUser | null>(null)
 	const [isDropdownOpen, setIsDropdownOpen] = useState(false)
-	const [hasNotifications, setHasNotifications] = useState(true)
+	const hasNotifications = true
 	const [isSearchOpen, setIsSearchOpen] = useState(false)
 	const dropdownRef = useRef<HTMLDivElement | null>(null)
 	const searchRef = useRef<HTMLDivElement | null>(null)
 	const { theme, setTheme, systemTheme } = useTheme()
-	const [mounted, setMounted] = useState(false)
 
-	useEffect(() => setMounted(true), [])
-
-	// User ma'lumotini localStorage'dan olish
-	// Eslatma: auth cookie httpOnly bo'lgani uchun uni client JS o'qiy olmaydi.
 	useEffect(() => {
-		setUser(getClientUser())
+		let active = true
+		const controller = new AbortController()
+
+		const syncUser = async () => {
+			try {
+				const res = await fetch('/authAPI/me', {
+					method: 'GET',
+					credentials: 'include',
+					cache: 'no-store',
+					signal: controller.signal,
+				})
+
+				if (!active) return
+
+				if (res.ok) {
+					const body = (await res.json()) as { user?: AuthUser }
+					if (body.user) {
+						setClientUser(body.user)
+						setUser(body.user)
+						return
+					}
+				}
+
+				clearClientAuth()
+				setUser(null)
+			} catch {
+				if (!active || controller.signal.aborted) return
+				setUser(getClientUser())
+			}
+		}
+
+		syncUser()
 
 		const onStorage = (e: StorageEvent) => {
 			if (e.key === 'user') {
@@ -30,7 +56,12 @@ export default function Header() {
 			}
 		}
 		window.addEventListener('storage', onStorage)
-		return () => window.removeEventListener('storage', onStorage)
+
+		return () => {
+			active = false
+			controller.abort()
+			window.removeEventListener('storage', onStorage)
+		}
 	}, [])
 
 	// Dropdown yoki search tashqarisiga bosilganda yopish
@@ -53,8 +84,6 @@ export default function Header() {
 			.toUpperCase()
 			.slice(0, 2)
 	}
-
-	if (!mounted) return null // SSR bilan moslashuv
 
 	// Dark mode aniqlash
 	const isDarkMode = theme === 'dark' || (theme === 'system' && systemTheme === 'dark')
