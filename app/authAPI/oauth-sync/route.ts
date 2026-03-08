@@ -20,11 +20,6 @@ export async function GET(req: NextRequest) {
 		// 2. db.json'dan user qidirish
 		const user = findUserByEmail(token.email)
 
-		if (!user) {
-			console.error('[oauth-sync] User not found in db for email:', token.email)
-			return NextResponse.redirect(new URL('/login?error=OAuthUserNotFound', req.url))
-		}
-
 		// 3. Custom auth_token cookie o'rnatish
 		const cookieOptions = {
 			httpOnly: true,
@@ -37,7 +32,18 @@ export async function GET(req: NextRequest) {
 		const redirectUrl = new URL('/dashboard', req.url)
 		const response = NextResponse.redirect(redirectUrl)
 
-		response.cookies.set('auth_token', String(user.id), cookieOptions)
+		if (user) {
+			// Normal case: user db.json da topildi
+			response.cookies.set('auth_token', String(user.id), cookieOptions)
+		} else {
+			// Vercel: db.json read-only, yozish fayl darajasida fail bo'lgan.
+			// Email-based token saqlaymiz — getCurrentUser() bu formatni anglaydi.
+			console.log(
+				'[oauth-sync] User not in db (Vercel read-only), using oauth token for:',
+				token.email,
+			)
+			response.cookies.set('auth_token', `oauth:${token.email}`, cookieOptions)
+		}
 
 		return response
 	} catch (err) {

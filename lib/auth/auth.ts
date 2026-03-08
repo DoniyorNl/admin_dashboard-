@@ -1,6 +1,6 @@
 import 'server-only'
 
-import { getUserById } from 'lib/api/db'
+import { findUserByEmail, getUserById } from 'lib/api/db'
 import { cookies } from 'next/headers'
 
 import type { User } from './types'
@@ -12,13 +12,35 @@ import type { User } from './types'
 export async function getCurrentUser(): Promise<User | null> {
 	try {
 		const cookieStore = await cookies()
-		const userId = cookieStore.get('auth_token')?.value
+		const token = cookieStore.get('auth_token')?.value
 
-		if (!userId) {
+		if (!token) {
 			return null
 		}
 
-		const data = getUserById(userId)
+		// OAuth token (Vercel: db.json yozish imkonsiz bo'lganda)
+		if (token.startsWith('oauth:')) {
+			const email = token.slice(6)
+			// Local devda db.json ga yozilgan bo'lishi mumkin
+			const dbUser = findUserByEmail(email)
+			if (dbUser) {
+				return {
+					id: Number(dbUser.id),
+					email: dbUser.email,
+					name: dbUser.name || email.split('@')[0],
+					role: dbUser.role || 'user',
+				}
+			}
+			// Vercel: virtual user (email dan keyin db ga qo'shilmagan)
+			return {
+				id: 0,
+				email,
+				name: email.split('@')[0],
+				role: 'user',
+			}
+		}
+
+		const data = getUserById(token)
 
 		if (!data) {
 			return null
