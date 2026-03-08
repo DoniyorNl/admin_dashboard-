@@ -1,4 +1,4 @@
-import { AUTH_API_BASE_URL } from 'lib/api/config'
+import { createUser, findUserByEmail } from 'lib/api/db'
 import NextAuth, { NextAuthOptions } from 'next-auth'
 import CredentialsProvider from 'next-auth/providers/credentials'
 import GitHubProvider from 'next-auth/providers/github'
@@ -23,16 +23,7 @@ const providers: NextAuthOptions['providers'] = [
 			}
 
 			try {
-				const response = await fetch(`${AUTH_API_BASE_URL}/users?email=${credentials.email}`, {
-					cache: 'no-store',
-				})
-
-				if (!response.ok) {
-					throw new Error('Failed to fetch user')
-				}
-
-				const users = await response.json()
-				const user = users[0]
+				const user = findUserByEmail(credentials.email)
 
 				if (!user) {
 					throw new Error('No user found')
@@ -43,7 +34,7 @@ const providers: NextAuthOptions['providers'] = [
 				}
 
 				return {
-					id: user.id.toString(),
+					id: String(user.id),
 					email: user.email,
 					name: user.name,
 					role: user.role,
@@ -84,39 +75,18 @@ export const authOptions: NextAuthOptions = {
 			// OAuth (Google/GitHub) orqali kirish
 			if (account?.provider === 'google' || account?.provider === 'github') {
 				try {
-					// Foydalanuvchi DB'da bormi tekshirish
-					const checkResponse = await fetch(
-						`${AUTH_API_BASE_URL}/users?email=${encodeURIComponent(user.email || '')}`,
-						{ cache: 'no-store' },
-					)
+					const existing = findUserByEmail(user.email || '')
 
-					const existingUsers = await checkResponse.json()
-
-					if (existingUsers.length === 0) {
+					if (!existing) {
 						// Yangi foydalanuvchi yaratish
-						const newUser = {
-							email: user.email,
-							name: user.name || user.email?.split('@')[0],
-							password: null, // OAuth foydalanuvchilarda password yo'q
+						createUser({
+							email: user.email || '',
+							name: user.name || user.email?.split('@')[0] || 'User',
+							password: '', // OAuth foydalanuvchilarda password yo'q
 							role: 'user',
 							twoFactorEnabled: false,
 							twoFactorSecret: null,
-							provider: account.provider, // 'google' yoki 'github'
-							providerId: account.providerAccountId,
-							image: user.image || null,
-						}
-
-						const createResponse = await fetch(`${AUTH_API_BASE_URL}/users`, {
-							method: 'POST',
-							headers: { 'Content-Type': 'application/json' },
-							body: JSON.stringify(newUser),
 						})
-
-						if (!createResponse.ok) {
-							console.error('Failed to create OAuth user')
-							return false
-						}
-
 						console.log('✅ New OAuth user created:', user.email)
 					} else {
 						console.log('✅ Existing OAuth user logged in:', user.email)
@@ -175,19 +145,24 @@ export const authOptions: NextAuthOptions = {
 		 * u NextAuth signIn'dan emas, to'g'ridan-to'g'ri /authAPI/login dan o'tadi.
 		 */
 		async redirect({ url, baseUrl }) {
-			// OAuth callback URLlarini oauth-sync orqali o'tkazish
-			if (url === `${baseUrl}/authAPI/oauth-sync`) {
-				return `${baseUrl}/authAPI/oauth-sync`
+			// Allow oauth-sync redirect regardless of domain mismatch
+			try {
+				const parsed = new URL(url)
+				if (parsed.pathname === '/authAPI/oauth-sync') {
+					return url
+				}
+			} catch {
+				// not a valid URL, fall through
 			}
 
-			// Relative URL bo'lsa baseUrl ga biriktiramiz
+			// Relative URL
 			if (url.startsWith('/')) return `${baseUrl}${url}`
 
-			// Xavfsiz: faqat bir xil origin'ga yo'naltirish
+			// Same origin
 			try {
-				if (new URL(url).origin === baseUrl) return url
+				if (new URL(url).origin === new URL(baseUrl).origin) return url
 			} catch {
-				// Invalid URL — fallback
+				// fallback
 			}
 
 			return baseUrl
