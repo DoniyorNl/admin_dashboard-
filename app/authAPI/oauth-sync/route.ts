@@ -1,14 +1,4 @@
-/**
- * OAuth ↔ Custom-auth ko'prigi
- *
- * Google/GitHub bilan kirish muvaffaqiyatli bo'lganda NextAuth foydalanuvchini
- * bu route'ga yo'naltiradi. Bu yerda:
- *  1. NextAuth JWT tokenidan email olinadi
- *  2. json-server'dan mos user topiladi
- *  3. Custom `auth_token` cookie o'rnatiladi (boshqa barcha sahifalar shunga tayanadi)
- *  4. /dashboard ga redirect qilinadi
- */
-import { AUTH_API_BASE_URL } from 'lib/api/config'
+import { findUserByEmail } from 'lib/api/db'
 import { getToken } from 'next-auth/jwt'
 import { NextRequest, NextResponse } from 'next/server'
 
@@ -27,22 +17,10 @@ export async function GET(req: NextRequest) {
 	}
 
 	try {
-		// 2. json-server'dan user qidirish
-		const res = await fetch(`${AUTH_API_BASE_URL}/users?email=${encodeURIComponent(token.email)}`, {
-			cache: 'no-store',
-		})
-
-		if (!res.ok) {
-			console.error('[oauth-sync] Backend error:', res.status)
-			return NextResponse.redirect(new URL('/login?error=OAuthBackendError', req.url))
-		}
-
-		const users: Array<{ id: number | string }> = await res.json()
-		const user = users[0]
+		// 2. db.json'dan user qidirish
+		const user = findUserByEmail(token.email)
 
 		if (!user) {
-			// json-server'da yo'q — bu NextAuth signIn callback ichida yaratilishi kerak edi;
-			// agar hali yaratilmagan bo'lsa qayta urinish uchun qaytaramiz
 			console.error('[oauth-sync] User not found in db for email:', token.email)
 			return NextResponse.redirect(new URL('/login?error=OAuthUserNotFound', req.url))
 		}

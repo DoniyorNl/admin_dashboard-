@@ -1,22 +1,7 @@
+import { findUserByEmail, updateUser } from 'lib/api/db'
 import { sendPasswordResetEmail } from 'lib/email/mailer'
 import { validateEmailComprehensive } from 'lib/email/validator'
 import { NextRequest, NextResponse } from 'next/server'
-
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'
-
-type DbUser = {
-	id: number | string
-	email: string
-	name: string
-	password?: string
-}
-
-function isDbUser(value: unknown): value is DbUser {
-	if (typeof value !== 'object' || value === null) return false
-	if (!('email' in value) || !('name' in value) || !('id' in value)) return false
-	const v = value as { email?: unknown; name?: unknown; id?: unknown }
-	return typeof v.email === 'string' && typeof v.name === 'string' && (typeof v.id === 'number' || typeof v.id === 'string')
-}
 
 // Random parol generatori
 function generateRandomPassword(length: number = 12): string {
@@ -68,19 +53,8 @@ export async function POST(request: NextRequest) {
 			return NextResponse.json({ success: false, error: emailValidation.reason }, { status: 400 })
 		}
 
-		// Barcha foydalanuvchilarni olish
-		const usersResponse = await fetch(`${API_BASE_URL}/users`)
-
-		if (!usersResponse.ok) {
-			throw new Error('Failed to fetch users')
-		}
-
-		const users = (await usersResponse.json()) as unknown
-
 		// Email bo'yicha foydalanuvchini topish
-		const user = Array.isArray(users)
-			? users.find(u => isDbUser(u) && u.email.toLowerCase() === email.toLowerCase())
-			: undefined
+		const user = findUserByEmail(email)
 
 		if (!user) {
 			return NextResponse.json(
@@ -93,19 +67,7 @@ export async function POST(request: NextRequest) {
 		const newPassword = generateRandomPassword(12)
 
 		// Parolni database'da yangilash
-		const updateResponse = await fetch(`${API_BASE_URL}/users/${user.id}`, {
-			method: 'PATCH',
-			headers: {
-				'Content-Type': 'application/json',
-			},
-			body: JSON.stringify({
-				password: newPassword,
-			}),
-		})
-
-		if (!updateResponse.ok) {
-			throw new Error('Failed to update password')
-		}
+		updateUser(user.id, { password: newPassword })
 
 		// Email yuborish
 		const emailSent = await sendPasswordResetEmail(user.email, user.name, newPassword)

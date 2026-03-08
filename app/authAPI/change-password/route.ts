@@ -1,13 +1,11 @@
+import { getUserById, updateUser } from 'lib/api/db'
 import { NextRequest, NextResponse } from 'next/server'
-
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'
 
 export async function POST(request: NextRequest) {
 	try {
 		const body = await request.json()
 		const { userId, currentPassword, newPassword } = body
 
-		// Validate input
 		if (!userId || !currentPassword || !newPassword) {
 			return NextResponse.json(
 				{ success: false, error: 'Missing required fields' },
@@ -22,16 +20,12 @@ export async function POST(request: NextRequest) {
 			)
 		}
 
-		// Fetch user from database
-		const userResponse = await fetch(`${API_BASE_URL}/users/${userId}`)
+		const user = getUserById(userId)
 
-		if (!userResponse.ok) {
+		if (!user) {
 			return NextResponse.json({ success: false, error: 'User not found' }, { status: 404 })
 		}
 
-		const user = await userResponse.json()
-
-		// Verify current password
 		if (user.password !== currentPassword) {
 			return NextResponse.json(
 				{ success: false, error: 'Current password is incorrect' },
@@ -39,32 +33,16 @@ export async function POST(request: NextRequest) {
 			)
 		}
 
-		// Update password in database
-		const updateResponse = await fetch(`${API_BASE_URL}/users/${userId}`, {
-			method: 'PATCH',
-			headers: {
-				'Content-Type': 'application/json',
-			},
-			body: JSON.stringify({
-				password: newPassword,
-			}),
-		})
+		const updatedUser = updateUser(userId, { password: newPassword })
 
-		if (!updateResponse.ok) {
-			throw new Error('Failed to update password')
-		}
-
-		const updatedUser = await updateResponse.json()
-
-		// Update localStorage user data if password changed successfully
 		return NextResponse.json({
 			success: true,
 			message: 'Password changed successfully',
 			user: {
-				id: updatedUser.id,
-				email: updatedUser.email,
-				name: updatedUser.name,
-				role: updatedUser.role,
+				id: updatedUser!.id,
+				email: updatedUser!.email,
+				name: updatedUser!.name,
+				role: updatedUser!.role,
 			},
 		})
 	} catch (error) {

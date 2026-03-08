@@ -1,6 +1,6 @@
 import 'server-only'
 
-import { AUTH_API_BASE_URL } from 'lib/api/config'
+import { getUserById } from 'lib/api/db'
 import { cookies } from 'next/headers'
 
 import type { User } from './types'
@@ -18,28 +18,16 @@ export async function getCurrentUser(): Promise<User | null> {
 			return null
 		}
 
-		// Backendga so'rov yuboramiz (userId ni encode qilgan holda)
-		const response = await fetch(`${AUTH_API_BASE_URL}/users/${encodeURIComponent(userId)}`, {
-			cache: 'no-store',
-			headers: {
-				'Content-Type': 'application/json',
-			},
-		})
+		const data = getUserById(userId)
 
-		if (!response.ok) {
-			console.error(
-				`[getCurrentUser] Failed to fetch user: ${response.status} ${response.statusText}`,
-			)
+		if (!data) {
 			return null
 		}
 
-		const data = await response.json()
-
-		// 🔄 ADAPTER: Backenddan kelgan har xil formatni yagona User interfacega o'tkazamiz
 		return {
-			id: data.id || data.user_id,
+			id: Number(data.id),
 			email: data.email,
-			name: data.name || data.full_name || 'No Name',
+			name: data.name || 'No Name',
 			role: data.role || 'user',
 		}
 	} catch (error) {

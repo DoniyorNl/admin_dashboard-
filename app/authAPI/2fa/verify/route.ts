@@ -1,5 +1,5 @@
 import crypto from 'crypto'
-import { AUTH_API_BASE_URL } from 'lib/api/config'
+import { getUserById, updateUser } from 'lib/api/db'
 import { setAuthCookie } from 'lib/auth/auth'
 import { decrypt } from 'lib/security/encryption'
 import { checkRateLimit, RATE_LIMITS, resetRateLimit } from 'lib/security/rateLimit'
@@ -91,13 +91,10 @@ export async function POST(request: Request) {
 		}
 
 		// 2. Get user from database
-		const userRes = await fetch(`${AUTH_API_BASE_URL}/users/${userId}`, { cache: 'no-store' })
-		if (!userRes.ok) {
+		const user = getUserById(userId)
+		if (!user) {
 			return NextResponse.json({ error: 'User not found' }, { status: 404 })
 		}
-
-		const user = await userRes.json()
-
 		if (!user.twoFactorSecret) {
 			return NextResponse.json({ error: 'Two-factor auth not set up' }, { status: 400 })
 		}
@@ -127,11 +124,7 @@ export async function POST(request: Request) {
 
 		// 5. Success: Enable 2FA if not already enabled
 		if (!user.twoFactorEnabled) {
-			await fetch(`${AUTH_API_BASE_URL}/users/${userId}`, {
-				method: 'PATCH',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ twoFactorEnabled: true }),
-			})
+			updateUser(userId, { twoFactorEnabled: true })
 		}
 
 		// 6. Reset rate limits (successful verification)

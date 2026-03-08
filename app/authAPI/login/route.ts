@@ -1,4 +1,4 @@
-import { AUTH_API_BASE_URL } from 'lib/api/config'
+import { findUserByEmail } from 'lib/api/db'
 import { setAuthCookie } from 'lib/auth/auth'
 import { NextResponse } from 'next/server'
 
@@ -12,74 +12,9 @@ export async function POST(request: Request) {
 			return NextResponse.json({ error: 'Email and password are required' }, { status: 400 })
 		}
 
-		const response = await fetch(`${AUTH_API_BASE_URL}/users?email=${encodeURIComponent(email)}`, {
-			method: 'GET',
-			headers: { 'Content-Type': 'application/json' },
-			cache: 'no-store',
-		})
+		const user = findUserByEmail(email)
 
-		if (!response.ok) {
-			const details = await response.text().catch(() => '')
-			return NextResponse.json(
-				{
-					error: `Failed to connect to backend (HTTP ${response.status})`,
-					details: details || undefined,
-				},
-				{ status: 502 },
-			)
-		}
-
-		interface UserResponse {
-			id: number
-			email: string
-			name: string
-			password: string
-			role?: string
-			twoFactorEnabled?: boolean
-		}
-
-		let users: unknown = null
-		try {
-			users = await response.json()
-		} catch {
-			users = null
-		}
-
-		let user: UserResponse | undefined = undefined
-		if (Array.isArray(users)) {
-			user = users.find(
-				(u: unknown): u is UserResponse =>
-					typeof u === 'object' &&
-					u !== null &&
-					'email' in u &&
-					String((u as UserResponse).email)
-						.trim()
-						.toLowerCase() === email,
-			)
-		}
-
-		// Fallback: ba'zi holatlarda json-server filter ishlamasa
-		if (!user) {
-			const allRes = await fetch(`${AUTH_API_BASE_URL}/users`, { cache: 'no-store' })
-			if (allRes.ok) {
-				const all = await allRes.json().catch(() => [])
-				if (Array.isArray(all)) {
-					user = all.find(
-						(u: unknown): u is UserResponse =>
-							typeof u === 'object' &&
-							u !== null &&
-							'email' in u &&
-							String((u as UserResponse).email)
-								.trim()
-								.toLowerCase() === email,
-					)
-				}
-			}
-		}
-
-		const okPassword = user && String(user.password ?? '') === password
-
-		if (!user || !okPassword) {
+		if (!user || String(user.password ?? '') !== password) {
 			return NextResponse.json({ error: 'Invalid email or password' }, { status: 401 })
 		}
 
@@ -91,8 +26,7 @@ export async function POST(request: Request) {
 			})
 		}
 
-		// setAuthCookie lib/auth.ts dan keladi
-		await setAuthCookie(user.id.toString())
+		await setAuthCookie(String(user.id))
 
 		return NextResponse.json({
 			success: true,

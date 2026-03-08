@@ -1,4 +1,4 @@
-import { AUTH_API_BASE_URL } from 'lib/api/config'
+import { updateUser } from 'lib/api/db'
 import { resetRateLimit } from 'lib/security/rateLimit'
 import { NextRequest, NextResponse } from 'next/server'
 
@@ -29,16 +29,9 @@ export async function POST(request: NextRequest) {
 		}
 
 		// 2. Update user in database
-		const updateResponse = await fetch(`${AUTH_API_BASE_URL}/users/${userId}`, {
-			method: 'PATCH',
-			headers: { 'Content-Type': 'application/json' },
-			body: JSON.stringify({
-				twoFactorSecret: null,
-				twoFactorEnabled: false,
-			}),
-		})
+		const updated = updateUser(userId, { twoFactorSecret: null, twoFactorEnabled: false })
 
-		if (!updateResponse.ok) {
+		if (!updated) {
 			throw new Error('Failed to disable 2FA in database')
 		}
 

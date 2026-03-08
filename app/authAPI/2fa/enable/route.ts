@@ -1,4 +1,4 @@
-import { AUTH_API_BASE_URL } from 'lib/api/config'
+import { updateUser } from 'lib/api/db'
 import { encrypt } from 'lib/security/encryption'
 import { checkRateLimit, RATE_LIMITS } from 'lib/security/rateLimit'
 import { NextRequest, NextResponse } from 'next/server'
@@ -64,17 +64,9 @@ export async function POST(request: NextRequest) {
 		const encryptedSecret = encrypt(secret.base32)
 
 		// 6. Update user in database
-		const updateResponse = await fetch(`${AUTH_API_BASE_URL}/users/${userId}`, {
-			method: 'PATCH',
-			headers: { 'Content-Type': 'application/json' },
-			body: JSON.stringify({
-				twoFactorSecret: encryptedSecret,
-				// Note: twoFactorEnabled will be set to true after user verifies the code
-			}),
-		})
+		const updated = updateUser(userId, { twoFactorSecret: encryptedSecret })
 
-		if (!updateResponse.ok) {
-			throw new Error('Failed to save 2FA secret to database')
+		if (!updated) {
 		}
 
 		console.log(`[2FA Enable] Secret generated and saved for user ${userId}`)
